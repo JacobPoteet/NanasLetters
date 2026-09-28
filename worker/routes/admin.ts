@@ -29,7 +29,7 @@ app.post("/review-queue/:id/resolve", async (c) => {
 
 app.put("/letters/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  let body: { date?: string; text?: string; meditationTitle?: string | null };
+  let body: { date?: string; text?: string; meditationTitle?: string | null; meditationUrl?: string | null };
   try {
     body = await c.req.json();
   } catch {

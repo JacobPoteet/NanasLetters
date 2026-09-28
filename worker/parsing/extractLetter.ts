@@ -31,6 +31,14 @@ export interface ExtractedLetter {
   date: string;
   text: string;
   meditationTitle: string | null;
+  /**
+   * The CTA link's raw href, if one was found — an `email.cac.org/t/...`
+   * tracking redirect, NOT a page to link to directly (see the comment on
+   * `findMeditationLinkHref` below). The ingestion orchestrator resolves this
+   * to a real cac.org URL before it's ever stored; extractLetter stays pure
+   * and does no network I/O.
+   */
+  meditationLinkHref: string | null;
   needsReview: boolean;
   reviewReason: ReviewReason | null;
 }
@@ -65,6 +73,35 @@ function parseMeditationTitle(subject: string): { title: string | null; unexpect
   return { title: match[1].trim(), unexpectedSubject: false };
 }
 
+const ANCHOR = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+// Matches both CTA wordings seen so far: "READ ON CAC.ORG" (2026) and "Read
+// this meditation on cac.org." (2023). Every link in these newsletters is
+// wrapped in the same email.cac.org tracking redirect regardless of
+// destination, so the anchor's VISIBLE TEXT is what has to identify the
+// right one — the href alone can't distinguish "read the meditation" from
+// "unsubscribe".
+const MEDITATION_LINK_TEXT = /read[\s\S]*cac\.org/i;
+
+/**
+ * Finds the "read the full meditation" link in the raw HTML, if the
+ * newsletter template for that era included one (2018-era emails embedded
+ * the whole meditation inline and had no such link — that's expected, not a
+ * parsing failure). Returns the raw tracking-redirect href, never a page to
+ * link a family member to directly: it's a per-recipient link tied to
+ * Nana's own subscription, and Cloudflare Workers-side resolution to the
+ * real cac.org URL happens elsewhere, once, at ingestion time.
+ */
+export function findMeditationLinkHref(html: string | null): string | null {
+  if (!html) return null;
+  ANCHOR.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = ANCHOR.exec(html))) {
+    const text = match[2].replace(/<[^>]+>/g, "").trim();
+    if (MEDITATION_LINK_TEXT.test(text)) return match[1];
+  }
+  return null;
+}
+
 export function extractLetter(message: RawMessage): ExtractedLetter {
   const rawText = message.plainTextBody ?? (message.htmlBody ? htmlToText(message.htmlBody) : "");
   const boundary = findForwardBoundary(rawText);
@@ -86,6 +123,7 @@ export function extractLetter(message: RawMessage): ExtractedLetter {
     date: message.date,
     text,
     meditationTitle: title,
+    meditationLinkHref: findMeditationLinkHref(message.htmlBody),
     needsReview: reviewReason !== null,
     reviewReason,
   };

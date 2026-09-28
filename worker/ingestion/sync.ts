@@ -7,6 +7,7 @@
 import { extractLetter } from "../parsing/extractLetter";
 import { fetchMessage, getAccessToken, listMessageIds } from "./gmail";
 import { isSameLetter } from "./duplicate";
+import { resolveMeditationUrl } from "./meditationLink";
 import { shiftDate } from "../dateWindow";
 import {
   getIngestionState,
@@ -71,11 +72,20 @@ export async function runIngestion(env: Env): Promise<SyncResult> {
       continue;
     }
 
+    // Resolved once, here, never re-visited: see meditationLink.ts for why
+    // this can't just be constructed from the title. A resolution failure
+    // (the newsletter had no such link, or the fetch errored) isn't a reason
+    // to fail the whole letter — it just means no reference link this time.
+    const meditationUrl = extracted.meditationLinkHref
+      ? await resolveMeditationUrl(extracted.meditationLinkHref)
+      : null;
+
     await insertLetter(env.DB, {
       gmailMessageId: extracted.gmailMessageId,
       date: extracted.date,
       text: extracted.text,
       meditationTitle: extracted.meditationTitle,
+      meditationUrl,
     });
     result.inserted++;
   }

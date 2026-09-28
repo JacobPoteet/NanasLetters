@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractLetter, type RawMessage } from "./extractLetter";
+import { extractLetter, findMeditationLinkHref, type RawMessage } from "./extractLetter";
 
 function message(overrides: Partial<RawMessage>): RawMessage {
   return {
@@ -113,5 +113,50 @@ describe("extractLetter", () => {
     );
     expect(result.meditationTitle).toBe("Mirroring the Divine Image");
     expect(result.needsReview).toBe(false);
+  });
+
+  it("picks up the meditation link href when the HTML body has one", () => {
+    const html =
+      '<p>Note.</p><a href="https://email.cac.org/t/d-l-wjjudhk-tlkrtkdrx-y/">READ ON CAC.ORG</a>' +
+      '<a href="https://email.cac.org/t/d-u-wjjudhk-tlkrtkdrx-yk/">Unsubscribe</a>';
+    const result = extractLetter(message({ htmlBody: html }));
+    expect(result.meditationLinkHref).toBe("https://email.cac.org/t/d-l-wjjudhk-tlkrtkdrx-y/");
+  });
+
+  it("is null when there's no HTML body at all (2018-era, embedded fully as plain text)", () => {
+    const result = extractLetter(message({ plainTextBody: "Note.\n\n-----Original Message-----\nFrom: x" }));
+    expect(result.meditationLinkHref).toBeNull();
+  });
+});
+
+describe("findMeditationLinkHref", () => {
+  it("matches the 2026-era 'READ ON CAC.ORG' button", () => {
+    const html = '<a href="https://email.cac.org/t/d-l-x-y/">READ ON CAC.ORG</a>';
+    expect(findMeditationLinkHref(html)).toBe("https://email.cac.org/t/d-l-x-y/");
+  });
+
+  it("matches the 2023-era 'Read this meditation on cac.org.' wording", () => {
+    const html = '<a href="https://email.cac.org/t/d-l-a-b/">Read this meditation on cac.org.</a>';
+    expect(findMeditationLinkHref(html)).toBe("https://email.cac.org/t/d-l-a-b/");
+  });
+
+  it("ignores every other link in the newsletter (unsubscribe, social, footer)", () => {
+    const html = [
+      '<a href="https://email.cac.org/t/d-u-x/">Unsubscribe</a>',
+      '<a href="https://email.cac.org/t/d-fb-x/">Like</a>',
+      '<a href="https://email.cac.org/t/d-l-x/">Learn more</a>',
+    ].join("");
+    expect(findMeditationLinkHref(html)).toBeNull();
+  });
+
+  it("returns null for null or empty HTML", () => {
+    expect(findMeditationLinkHref(null)).toBeNull();
+    expect(findMeditationLinkHref("")).toBeNull();
+  });
+
+  it("is safe to call repeatedly (the anchor regex must not carry state across calls)", () => {
+    const html = '<a href="https://email.cac.org/t/d-l-x/">READ ON CAC.ORG</a>';
+    expect(findMeditationLinkHref(html)).toBe("https://email.cac.org/t/d-l-x/");
+    expect(findMeditationLinkHref(html)).toBe("https://email.cac.org/t/d-l-x/");
   });
 });

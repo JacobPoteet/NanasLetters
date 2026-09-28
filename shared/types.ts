@@ -15,6 +15,8 @@ export interface Letter {
   date: string; // YYYY-MM-DD
   text: string;
   meditationTitle: string | null;
+  /** A link to that day's meditation on cac.org, not its text — see CLAUDE.md. */
+  meditationUrl: string | null;
   photos: Photo[];
 }
 

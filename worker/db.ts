@@ -15,6 +15,7 @@ interface LetterFullRow {
   date: string;
   text: string;
   meditation_title: string | null;
+  meditation_url: string | null;
 }
 
 interface PhotoRow {
@@ -63,7 +64,7 @@ export async function getOnThisDay(db: D1Database, monthDay: string, nearbyWindo
 
 export async function getLetterById(db: D1Database, id: number): Promise<Letter | null> {
   const row = await db
-    .prepare("SELECT id, date, text, meditation_title FROM letters WHERE id = ?1")
+    .prepare("SELECT id, date, text, meditation_title, meditation_url FROM letters WHERE id = ?1")
     .bind(id)
     .first<LetterFullRow>();
   if (!row) return null;
@@ -80,7 +81,14 @@ export async function getLetterById(db: D1Database, id: number): Promise<Letter 
     caption: p.caption,
   }));
 
-  return { id: row.id, date: row.date, text: row.text, meditationTitle: row.meditation_title, photos };
+  return {
+    id: row.id,
+    date: row.date,
+    text: row.text,
+    meditationTitle: row.meditation_title,
+    meditationUrl: row.meditation_url,
+    photos,
+  };
 }
 
 /** The letter immediately before or after this one by date, for the letter view's prev/next nav. */
@@ -194,11 +202,19 @@ export async function getLetterTextByDate(db: D1Database, date: string): Promise
 
 export async function insertLetter(
   db: D1Database,
-  letter: { gmailMessageId: string; date: string; text: string; meditationTitle: string | null },
+  letter: {
+    gmailMessageId: string;
+    date: string;
+    text: string;
+    meditationTitle: string | null;
+    meditationUrl: string | null;
+  },
 ): Promise<number> {
   const result = await db
-    .prepare("INSERT INTO letters (date, text, meditation_title, gmail_message_id) VALUES (?1, ?2, ?3, ?4)")
-    .bind(letter.date, letter.text, letter.meditationTitle, letter.gmailMessageId)
+    .prepare(
+      "INSERT INTO letters (date, text, meditation_title, meditation_url, gmail_message_id) VALUES (?1, ?2, ?3, ?4, ?5)",
+    )
+    .bind(letter.date, letter.text, letter.meditationTitle, letter.meditationUrl, letter.gmailMessageId)
     .run();
   return result.meta.last_row_id;
 }
@@ -260,7 +276,7 @@ export async function listReviewQueue(db: D1Database, status: string = "pending"
 export async function updateLetter(
   db: D1Database,
   id: number,
-  fields: { date?: string; text?: string; meditationTitle?: string | null },
+  fields: { date?: string; text?: string; meditationTitle?: string | null; meditationUrl?: string | null },
 ): Promise<void> {
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -275,6 +291,10 @@ export async function updateLetter(
   if (fields.meditationTitle !== undefined) {
     params.push(fields.meditationTitle);
     sets.push(`meditation_title = ?${params.length}`);
+  }
+  if (fields.meditationUrl !== undefined) {
+    params.push(fields.meditationUrl);
+    sets.push(`meditation_url = ?${params.length}`);
   }
   if (sets.length === 0) return;
   params.push(id);

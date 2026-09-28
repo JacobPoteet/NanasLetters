@@ -8,19 +8,21 @@ DELETE FROM review_queue;
 DELETE FROM letters;
 
 -- Three letters on today's month/day in different years, so the "on this
--- day" home page has something to show immediately after seeding.
-INSERT INTO letters (date, text, meditation_title, gmail_message_id) VALUES
-  (date('now'), 'The tomatoes finally came in, and of course it happened the same week the rain would not stop. Give the kids a hug from me if you see them this week.', 'A Full Prophet', 'seed-today'),
-  (date('now', '-1 year'), 'Church was full this morning, which always makes your grandfather happier than he lets on. The zinnias have decided to take over the whole bed, and I have stopped arguing with them about it.', 'The Long Way Home', 'seed-last-year'),
-  (date('now', '-3 year'), 'It is quiet here today, just birds and the coffee pot, which is exactly the kind of morning I needed before the week gets going.', 'Radical Resilience', 'seed-three-years-ago');
+-- day" home page has something to show immediately after seeding. One has no
+-- meditation_url, to demo the plain-text fallback for eras/emails where the
+-- newsletter had no "read the full meditation" link to resolve.
+INSERT INTO letters (date, text, meditation_title, meditation_url, gmail_message_id) VALUES
+  (date('now'), 'The tomatoes finally came in, and of course it happened the same week the rain would not stop. Give the kids a hug from me if you see them this week.', 'A Full Prophet', 'https://cac.org/daily-meditations/a-full-prophet/', 'seed-today'),
+  (date('now', '-1 year'), 'Church was full this morning, which always makes your grandfather happier than he lets on. The zinnias have decided to take over the whole bed, and I have stopped arguing with them about it.', 'The Long Way Home', 'https://cac.org/daily-meditations/the-long-way-home/', 'seed-last-year'),
+  (date('now', '-3 year'), 'It is quiet here today, just birds and the coffee pot, which is exactly the kind of morning I needed before the week gets going.', 'Radical Resilience', NULL, 'seed-three-years-ago');
 
 -- A handful of other letters for Browse and Search to have something to page
 -- and match through.
-INSERT INTO letters (date, text, meditation_title, gmail_message_id) VALUES
-  ('2024-05-01', 'I love this one, of course, but I also acknowledge we are still responsible for doing our part. Your cousin called last night with news I will let her share herself, but I have been smiling since.', 'The Joy of Simplicity', 'seed-2024-05-01'),
-  ('2023-12-31', 'New picture with the family today, and the last paragraph is what I hope will anchor my fears about the year ahead. Enjoy the New Year.', 'Radical Resilience', 'seed-2023-12-31'),
-  ('2021-09-24', 'We got the whole gang together for pancakes before the long drive back, and I keep looking at this picture.', 'Seeing the Divine Image Everywhere', 'seed-2021-09-24'),
-  ('2019-02-06', 'I could not have said it better myself this morning. Well, happy Olympics tomorrow!', 'Blessed Are the Peacemakers', 'seed-2019-02-06');
+INSERT INTO letters (date, text, meditation_title, meditation_url, gmail_message_id) VALUES
+  ('2024-05-01', 'I love this one, of course, but I also acknowledge we are still responsible for doing our part. Your cousin called last night with news I will let her share herself, but I have been smiling since.', 'The Joy of Simplicity', 'https://cac.org/daily-meditations/the-joy-of-simplicity/', 'seed-2024-05-01'),
+  ('2023-12-31', 'New picture with the family today, and the last paragraph is what I hope will anchor my fears about the year ahead. Enjoy the New Year.', 'Radical Resilience', NULL, 'seed-2023-12-31'),
+  ('2021-09-24', 'We got the whole gang together for pancakes before the long drive back, and I keep looking at this picture.', 'Seeing the Divine Image Everywhere', NULL, 'seed-2021-09-24'),
+  ('2019-02-06', 'I could not have said it better myself this morning. Well, happy Olympics tomorrow!', 'Blessed Are the Peacemakers', NULL, 'seed-2019-02-06');
 
 -- One letter with a placeholder photo, so the inline-photo layout has
 -- something to render locally.
