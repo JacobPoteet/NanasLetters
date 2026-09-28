@@ -304,6 +304,54 @@ export async function updateLetter(
     .run();
 }
 
-export async function resolveReviewItem(db: D1Database, id: number, status: "resolved" | "dismissed"): Promise<void> {
-  await db.prepare("UPDATE review_queue SET status = ?1 WHERE id = ?2").bind(status, id).run();
+export async function getReviewItemById(db: D1Database, id: number): Promise<ReviewQueueItem | null> {
+  const row = await db
+    .prepare("SELECT id, gmail_message_id, reason, received_date, raw_text, status FROM review_queue WHERE id = ?1")
+    .bind(id)
+    .first<{
+      id: number;
+      gmail_message_id: string;
+      reason: ReviewQueueItem["reason"];
+      received_date: string;
+      raw_text: string;
+      status: ReviewQueueItem["status"];
+    }>();
+  if (!row) return null;
+  return {
+    id: row.id,
+    gmailMessageId: row.gmail_message_id,
+    reason: row.reason,
+    receivedDate: row.received_date,
+    rawText: row.raw_text,
+    status: row.status,
+  };
+}
+
+export async function dismissReviewItem(db: D1Database, id: number): Promise<void> {
+  await db.prepare("UPDATE review_queue SET status = 'dismissed' WHERE id = ?1").bind(id).run();
+}
+
+/**
+ * Turns a review-queue item into a real letter: inserts the corrected/edited
+ * fields as a `letters` row and marks the queue item resolved, as one atomic
+ * `batch()` — D1 has no cross-statement transactions, so without batch() a
+ * failure between the two writes could insert the letter but leave the queue
+ * item stuck pending (or the reverse), see CLAUDE.md's D1/FTS trigger note
+ * for the same reasoning applied to a different pair of writes.
+ */
+export async function acceptReviewItem(
+  db: D1Database,
+  id: number,
+  gmailMessageId: string,
+  letter: { date: string; text: string; meditationTitle: string | null; meditationUrl: string | null },
+): Promise<number> {
+  const [insertResult] = await db.batch([
+    db
+      .prepare(
+        "INSERT INTO letters (date, text, meditation_title, meditation_url, gmail_message_id) VALUES (?1, ?2, ?3, ?4, ?5)",
+      )
+      .bind(letter.date, letter.text, letter.meditationTitle, letter.meditationUrl, gmailMessageId),
+    db.prepare("UPDATE review_queue SET status = 'resolved' WHERE id = ?1").bind(id),
+  ]);
+  return insertResult.meta.last_row_id;
 }

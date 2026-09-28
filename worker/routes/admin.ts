@@ -3,7 +3,7 @@
 // ingestion review queue — see CLAUDE.md's Functionality section.
 
 import { Hono } from "hono";
-import { getLetterById, listReviewQueue, resolveReviewItem, updateLetter } from "../db";
+import { acceptReviewItem, dismissReviewItem, getLetterById, getReviewItemById, listReviewQueue, updateLetter } from "../db";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -12,19 +12,47 @@ app.get("/review-queue", async (c) => {
   return c.json({ items: await listReviewQueue(c.env.DB, status) });
 });
 
-app.post("/review-queue/:id/resolve", async (c) => {
+// Genuinely not a letter (e.g. a mis-labeled reply-thread message, or a
+// duplicate of a letter that already exists) — no `letters` row is created.
+app.post("/review-queue/:id/dismiss", async (c) => {
   const id = Number(c.req.param("id"));
-  let body: { status?: "resolved" | "dismissed" };
+  const item = await getReviewItemById(c.env.DB, id);
+  if (!item) return c.json({ error: "Not found" }, 404);
+  if (item.status !== "pending") return c.json({ error: "Already resolved" }, 409);
+  await dismissReviewItem(c.env.DB, id);
+  return c.json({ ok: true });
+});
+
+// The human call the review queue exists for: takes the (possibly edited)
+// fields and actually writes the letter, instead of just flipping a status
+// column — see the linked issue for why the old /resolve endpoint was a bug.
+app.post("/review-queue/:id/accept", async (c) => {
+  const id = Number(c.req.param("id"));
+  let body: { date?: string; text?: string; meditationTitle?: string | null; meditationUrl?: string | null };
   try {
     body = await c.req.json();
   } catch {
     return c.json({ error: "Invalid JSON body" }, 400);
   }
-  if (body.status !== "resolved" && body.status !== "dismissed") {
-    return c.json({ error: "status must be 'resolved' or 'dismissed'" }, 400);
+  if (!body.date || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+    return c.json({ error: "date must be YYYY-MM-DD" }, 400);
   }
-  await resolveReviewItem(c.env.DB, id, body.status);
-  return c.json({ ok: true });
+  if (!body.text || body.text.trim().length === 0) {
+    return c.json({ error: "text must not be empty" }, 400);
+  }
+
+  const item = await getReviewItemById(c.env.DB, id);
+  if (!item) return c.json({ error: "Not found" }, 404);
+  if (item.status !== "pending") return c.json({ error: "Already resolved" }, 409);
+
+  const letterId = await acceptReviewItem(c.env.DB, id, item.gmailMessageId, {
+    date: body.date,
+    text: body.text,
+    meditationTitle: body.meditationTitle ?? null,
+    meditationUrl: body.meditationUrl ?? null,
+  });
+  const letter = await getLetterById(c.env.DB, letterId);
+  return c.json({ letter });
 });
 
 app.put("/letters/:id", async (c) => {
