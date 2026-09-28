@@ -13,7 +13,7 @@ Nothing below is locked in until noted otherwise. Sections marked **[decided]** 
 **[decided] Roadmap, in order** — don't skip ahead:
 
 1. **Parsing experiment** (current phase): pull a sample of letters across different years from Gmail, figure out how to reliably separate Nana's own words from the meditation-email boilerplate/forwarding cruft she's replying inside of, and report conclusions before touching a database schema.
-2. **Functionality**: what the site actually does for a family member — read, search, browse — based on what the parsing experiment shows is actually extractable (e.g. per-letter date is certain; per-letter "occasion" metadata may not exist and shouldn't be invented).
+2. **Functionality** (done — see "Functionality" section below): what the site actually does for a family member — read, search, browse.
 3. **Tech stack**: chosen to serve #2, not assumed up front. Cloudflare + a single Worker is decided (below); everything inside that is not.
 4. **UI/layout**: elegant, clean, calming, ethereal, meditative — it should feel like the thing it's archiving, not like an admin dashboard. Welcoming to family members specifically, not a generic "cool site."
 5. **First implementation pass + CI/CD**, mirroring Lunch Special's pipeline shape below.
@@ -22,7 +22,7 @@ Open questions, sharper now than "undecided" but not yet **[decided]**:
 
 - **Ingestion, backfill**: confirmed source is Gmail label `Fwd: Richard Rohr Meditation` (label ID `Label_6064425115864008158`) on Jacob's account — 1,927 messages / 1,859 threads as of Sept 2026, not ~2,000 as first guessed. The earliest one under this subject pattern is Feb 6, 2018, not 10 years back — either the habit started later than remembered, or older letters exist under a different subject/label and haven't been located yet. Don't assume the second without checking once backfill actually starts.
 - **Ingestion, ongoing**: she still writes one every morning. Candidates: keep polling Gmail via a scheduled Worker (Cron Trigger) hitting the Gmail API, or switch to Cloudflare Email Routing (a Worker email handler on a dedicated address she's forwarded/CC'd on) so new mail never depends on a Gmail OAuth token staying valid. Decide once the backfill approach is settled — the two don't have to be the same mechanism.
-- **Auth**: family-only access. Leading candidate is a single shared passphrase (Lunch Special's admin-password pattern), not per-user accounts, since the audience is small and fixed. Decide before building any login screen.
+- **Auth [decided: two-tier]**: family viewers share one passphrase (Lunch Special's admin-password pattern, ~20 people on Nana's list) — no per-user accounts. **A separate, stronger admin passphrase** gates the editing screen below, since that one can rewrite archive content and shouldn't share a secret that ~20 people know.
 - **What "archive" means [mostly decided]**: a searchable library, not just a chronological feed. Nana explicitly wants (a) full-text search over what the letters actually say, (b) search/filter by date or date range, and (c) an "on this day" surface — showing past letters written on today's month/day across the years. All three need a real per-letter date, stored as structured data, not buried in freeform text. Whether there's *additional* per-letter metadata (occasion, recipients) beyond date is still open, and depends on what's actually in the source emails.
 - **Attachments/images [confirmed]**: some letters carry real photo attachments (a Dec 2023 letter has a 2MB `.jpg` of a family picture referenced in her own text). Object storage (R2) alongside D1 is needed, not a TEXT column — this is no longer speculative.
 
@@ -33,6 +33,24 @@ Open questions, sharper now than "undecided" but not yet **[decided]**:
 - **Some recent messages have no genuine plain-text MIME part**, so a naive HTML-to-text conversion falls back to something that leaves raw CSS (`@media` blocks etc.) sitting in the output as visible junk text — seen in a Sept 2026 sample, not in 2018/2023 ones. The real parser needs its own HTML→text step that explicitly drops `<style>`/`<script>` node contents, not the convert-on-the-fly behavior of whatever tool was used to sample these.
 - **Same-day duplicate sends happen** (three near-identical copies of one letter sent minutes apart have been seen). Dedup on the same calendar day is needed before a letter is inserted, not assumed away.
 - The letter's date should come from the outer email's own `Date` header (when Nana sent the forward), never parsed out of the subject or body — subject-line format itself isn't stable across years (`Fwd: Richard Rohr Meditation: X` vs `Fw: Richard Rohr's Daily Meditation: X`).
+
+## Functionality (v1 scope) **[decided]**
+
+Five pages, one review queue. Nothing here is a nice-to-have layered on top of the archive — this *is* the archive.
+
+- **On this day (home)**: letters written on today's month/day across every year, newest year first. A day with zero letters falls back to the nearest days within a window (clearly labeled as such, e.g. "from a few days either side") rather than showing an empty page — full daily coverage isn't guaranteed, especially before the archive's confirmed Feb 2018 start.
+- **Browse**: plain chronological list (year → month), for a family member who just wants to read forward or back through time rather than search for something.
+- **Letter view**: Nana's own text for that date, the date itself, any inline photo she attached, and the day's meditation title as small reference metadata — never the meditation's own body (see the copyright/noise reasoning under "Parsing experiment findings" above). No outbound link to cac.org in v1; their URLs per meditation aren't confirmed stable.
+- **Search**: full-text over her letters' own words, combinable with a date-range filter, results shown as highlighted snippets linking to the full letter.
+- **Admin edit screen**: gated by the separate admin passphrase above. Lets a bad parse (wrong date, bad split between her words and the forwarded block, a duplicate that should've been merged) get corrected by hand. Also the home for the **ingestion review queue** — any incoming letter the parser isn't confident about (no recognized forward marker, an unexpected subject shape, an ambiguous same-day duplicate) lands here for a human call instead of silently writing a wrong or duplicated row to prod.
+
+Explicit non-goals for v1 — don't build these until asked:
+
+- No comments, reactions, or any family-facing write access. The site is read-only for everyone but the admin.
+- No notifications, email digests, or RSS. Family visits on their own.
+- No export/download/PDF of letters.
+- No standalone photo gallery — attachments show inline on their own letter only.
+- No per-letter metadata beyond date + meditation title (no "occasion," no recipient list) unless a real need for it shows up.
 
 ## Commands **[decided: shape, not final names]**
 
