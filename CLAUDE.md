@@ -114,7 +114,18 @@ The first pass exists and is real, not scaffolding-only: `npm test && npm run ch
 - **R2 bucket doesn't exist remotely.** `wrangler r2 bucket create` refused with "Please enable R2 through the Cloudflare Dashboard" (code 10042) — a one-time dashboard action only Jacob can do. The binding is already in `wrangler.jsonc` and works locally; only `wrangler deploy` needs the real bucket.
 - **Ongoing ingestion is on hold, deliberately** (Jacob's call). `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REFRESH_TOKEN` remain unset; the live Gmail-API code path (list → fetch → parse → resolve meditation link → dedupe/review-queue) is written and unit-tested down to the pure folds, just never run against the live API, and the site currently has no automatic way to receive a letter Nana sends tomorrow.
 - **Real alerting on ingestion failure** is [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2) — currently just `console.error`.
-- **A yearly calendar view for the admin panel** (entry count per day, red/green, pips for multiples — a fast way to spot a real gap or an unresolved duplicate) is [issue #3](https://github.com/JacobPoteet/NanasLetters/issues/3), not yet built.
+
+### What's next — milestone 1.1.0
+
+Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/milestone/1](https://github.com/JacobPoteet/NanasLetters/milestone/1). This list exists so a fresh session can pick up the plan without re-deriving it:
+
+- [#4](https://github.com/JacobPoteet/NanasLetters/issues/4) — deploy the Worker to Cloudflare for the first time. Nothing but the D1 database exists on the account right now.
+- [#5](https://github.com/JacobPoteet/NanasLetters/issues/5) — apply the verified backfill (2,851 letters) to prod D1. Deliberately not automatic — a real one-time action to confirm before running.
+- [#6](https://github.com/JacobPoteet/NanasLetters/issues/6) — decide and implement ongoing ingestion (Gmail OAuth polling vs. Cloudflare Email Routing), currently on hold.
+- [#2](https://github.com/JacobPoteet/NanasLetters/issues/2) — real ingestion-failure alerting.
+- [#3](https://github.com/JacobPoteet/NanasLetters/issues/3) — admin: yearly calendar view (entry counts per day, red/green, pips for multiples).
+- [#7](https://github.com/JacobPoteet/NanasLetters/issues/7) — admin: a real nav shell + browse/search to find any of the ~2,850 letters to edit (today the edit form is only reachable from a letter you already found via the family-facing pages).
+- [#8](https://github.com/JacobPoteet/NanasLetters/issues/8) — admin: basic usage analytics (visits, letters read, device counts), mirroring Lunch Special's `analytics_visits`/`analytics_rounds` pattern — anonymous, operational visibility only ("is this working, roughly what scale"), explicitly not engagement optimization or per-person tracking.
 
 ## Deploy to Cloudflare **[bootstrap steps, not yet performed]**
 
