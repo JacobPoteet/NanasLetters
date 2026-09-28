@@ -288,3 +288,66 @@ button {
   font-size: 15px;
   padding: 24px 0;
 }
+
+/* Phone/narrow-tablet breakpoint for the five family-facing pages (Home,
+   Browse, Letter, Search, Login) — the admin screens are exempt from the
+   design bar (CLAUDE.md's UI/layout decision) so they're untouched here. */
+@media (max-width: 640px) {
+  .header {
+    padding: 18px 20px;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .header__nav {
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .content {
+    padding: 36px 20px 48px;
+  }
+
+  .big-date {
+    font-size: 32px;
+  }
+
+  .letter-card {
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 0;
+  }
+
+  .letter-card__year {
+    min-width: 0;
+    font-size: 24px;
+  }
+
+  .photo-placeholder {
+    width: 100%;
+    height: 180px;
+  }
+
+  .letter-body {
+    margin-top: 26px;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .letter-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .login-form {
+    margin: 64px auto;
+    max-width: 100%;
+    padding: 0 24px;
+  }
+}
