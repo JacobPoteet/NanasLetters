@@ -16,7 +16,8 @@
     "db:migrate": "wrangler d1 migrations apply nanas-letters-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply nanas-letters-db --remote",
     "db:seed": "wrangler d1 execute nanas-letters-db --local --file=seed/seed.sql",
-    "db:export:remote": "node scripts/db-export.mjs"
+    "db:export:remote": "node scripts/db-export.mjs",
+    "backfill:import": "tsx scripts/import-mbox.ts"
   },
   "dependencies": {
     "hono": "^4.13.8",
@@ -25,11 +26,14 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.57.3",
+    "@types/mailparser": "^3.4.6",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "mailparser": "^3.9.29",
     "oxlint": "^1.85.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^8.3.0",
     "vitest": "^5.0.1",

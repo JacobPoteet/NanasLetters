@@ -13,4 +13,6 @@ backups/
 # letter) — never committed, especially since this repo is public. See
 # CLAUDE.md's ingestion/backfill section.
 /Mail/
+# Generated from it by scripts/import-mbox.ts — also real letter text.
+/backfill/
 
