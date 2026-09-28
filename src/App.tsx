@@ -22,7 +22,7 @@ function matchId(pattern: RegExp, path: string): number | null {
 }
 
 export function App() {
-  const { path } = useRouter();
+  const { path, search } = useRouter();
   const [role, setRole] = useState<Role | null | undefined>(undefined); // undefined = still checking
 
   useEffect(() => {
@@ -71,11 +71,11 @@ export function App() {
           <AdminPage />
         </AdminShell>
       ) : letterId !== null ? (
-        <LetterPage id={letterId} role={role} />
+        <LetterPage id={letterId} role={role} search={search} />
       ) : path === "/browse" ? (
         <BrowsePage />
       ) : path === "/search" ? (
-        <SearchPage />
+        <SearchPage search={search} />
       ) : (
         <HomePage />
       )}

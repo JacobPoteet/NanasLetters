@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import type { SearchResult, SearchSort } from "../../shared/types";
+import { decodeSearchQuery, encodeSearchQuery } from "../../shared/searchQuery";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
-import { Link } from "../router";
+import { Link, useRouter } from "../router";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
 
 const MONTH_NAMES = [
@@ -15,11 +16,13 @@ function formatResultDate(date: string): string {
   return `${MONTH_NAMES[month - 1]} ${day}, ${year}`;
 }
 
-export function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [from, setFrom] = useState<string | null>(null);
-  const [to, setTo] = useState<string | null>(null);
-  const [sort, setSort] = useState<SearchSort>("relevance");
+export function SearchPage({ search }: { search: string }) {
+  const { navigate } = useRouter();
+  const initial = decodeSearchQuery(search);
+  const [query, setQuery] = useState(initial.query);
+  const [from, setFrom] = useState<string | null>(initial.from);
+  const [to, setTo] = useState<string | null>(initial.to);
+  const [sort, setSort] = useState<SearchSort>(initial.sort);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -28,9 +31,32 @@ export function SearchPage() {
     trackVisit("search");
   }, []);
 
-  async function runSearch(nextSort: SearchSort) {
+  // The URL's query string is the source of truth for what's being searched,
+  // so a browser back button (or the letter view's "back to search results"
+  // link) landing back on /search with the same params reproduces the same
+  // results instead of a blank page — see issue #17.
+  useEffect(() => {
+    const state = decodeSearchQuery(search);
+    setQuery(state.query);
+    setFrom(state.from);
+    setTo(state.to);
+    setSort(state.sort);
     setError(null);
     setHint(null);
+
+    if (!state.query.trim() && !state.from && !state.to) {
+      setResults(null);
+      return;
+    }
+
+    api
+      .search(state.query, state.from ?? undefined, state.to ?? undefined, state.sort)
+      .then((r) => setResults(r.results))
+      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+  }, [search]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
     if (!query.trim() && !from && !to) {
       setHint("Type a word or two, or choose a date range, to see letters here.");
@@ -38,22 +64,14 @@ export function SearchPage() {
       return;
     }
 
-    try {
-      const r = await api.search(query, from ?? undefined, to ?? undefined, nextSort);
-      setResults(r.results);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    }
+    navigate(`/search${encodeSearchQuery({ query, from, to, sort })}`, { replace: true });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    await runSearch(sort);
-  }
-
-  async function handleSortChange(nextSort: SearchSort) {
+  function handleSortChange(nextSort: SearchSort) {
     setSort(nextSort);
-    if (results !== null) await runSearch(nextSort);
+    if (results !== null) {
+      navigate(`/search${encodeSearchQuery({ query, from, to, sort: nextSort })}`, { replace: true });
+    }
   }
 
   const searchedByDateOnly = !query.trim() && (Boolean(from) || Boolean(to));
@@ -126,7 +144,10 @@ export function SearchPage() {
                       className="letter-card__excerpt search-result"
                       dangerouslySetInnerHTML={{ __html: result.snippetHtml }}
                     />
-                    <Link to={`/letters/${result.id}`} className="letter-card__link">
+                    <Link
+                      to={`/letters/${result.id}?${new URLSearchParams({ from: `/search${search}` })}`}
+                      className="letter-card__link"
+                    >
                       Read the letter →
                     </Link>
                   </div>
