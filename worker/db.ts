@@ -3,6 +3,7 @@ import type {
   AnalyticsDay,
   AnalyticsPage,
   AnalyticsSummary,
+  ArchiveStats,
   Letter,
   LetterSummary,
   MostReadLetter,
@@ -72,6 +73,27 @@ export async function getOnThisDay(db: D1Database, monthDay: string, nearbyWindo
     .all<LetterRow>();
 
   return { monthDay, exact: [], nearby: (nearbyRows.results ?? []).map(rowToSummary) };
+}
+
+/** Homepage welcome-section totals — same MIN(date) pattern as getCalendarSummary, minus its review-queue detail. */
+export async function getArchiveStats(db: D1Database): Promise<ArchiveStats> {
+  // Two queries, not one: SQLite's "bare column rides along with MIN()/MAX()"
+  // trick only applies with a single aggregate in the query — this one has
+  // both MIN and MAX, so which row `id` would come from is undefined. A
+  // plain ORDER BY LIMIT 1 for the first letter's id is unambiguous.
+  const [totals, first] = await Promise.all([
+    db
+      .prepare("SELECT COUNT(*) AS total, MIN(date) AS firstDate, MAX(date) AS lastDate FROM letters")
+      .first<{ total: number; firstDate: string | null; lastDate: string | null }>(),
+    db.prepare("SELECT id FROM letters ORDER BY date ASC, id ASC LIMIT 1").first<{ id: number }>(),
+  ]);
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    totalLetters: totals?.total ?? 0,
+    firstDate: totals?.firstDate ?? today,
+    lastDate: totals?.lastDate ?? today,
+    firstLetterId: first?.id ?? null,
+  };
 }
 
 export async function getLetterById(db: D1Database, id: number): Promise<Letter | null> {
@@ -159,7 +181,41 @@ export async function searchLetters(
   options: { from?: string; to?: string; limit?: number } = {},
 ): Promise<SearchResult[]> {
   const ftsQuery = buildFtsQuery(query);
-  if (!ftsQuery) return [];
+
+  // No words typed: with no date filter either, there's nothing to search
+  // for — but a date range alone is a real request ("everything from March
+  // 2021"), so it falls back to a plain date-filtered read of `letters`
+  // instead of dead-ending on FTS's empty-query behavior. escapeAndMarkSnippet
+  // is safe to reuse here even though there's no match to mark — plain text
+  // with no delimiter characters in it just comes back HTML-escaped.
+  if (!ftsQuery) {
+    if (!options.from && !options.to) return [];
+
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (options.from) {
+      params.push(options.from);
+      conditions.push(`date >= ?${params.length}`);
+    }
+    if (options.to) {
+      params.push(options.to);
+      conditions.push(`date <= ?${params.length}`);
+    }
+    params.push(options.limit ?? 20);
+
+    const rows = await db
+      .prepare(
+        `SELECT id, date, text FROM letters WHERE ${conditions.join(" AND ")} ORDER BY date DESC, id DESC LIMIT ?${params.length}`,
+      )
+      .bind(...params)
+      .all<{ id: number; date: string; text: string }>();
+
+    return (rows.results ?? []).map((r) => ({
+      id: r.id,
+      date: r.date,
+      snippetHtml: escapeAndMarkSnippet(excerptOf(r.text)),
+    }));
+  }
 
   const conditions = ["letters_fts MATCH ?1"];
   // Bound params, not string literals: snippet()'s delimiters are control

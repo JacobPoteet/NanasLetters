@@ -20,3 +20,10 @@ ADMIN_PASSPHRASE=choose-a-stronger-admin-passphrase
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REFRESH_TOKEN=
+
+# `npm run admin` — opens a browser straight into a logged-in admin session
+# for local dev, no passphrase typing. Any random string works; leave it set
+# only in your own .dev.vars. Never `wrangler secret put` this one: it must
+# stay absent from every real deployment, which is what makes worker/routes/
+# auth.ts's /dev-login route safely inert everywhere but here.
+DEV_LOGIN_TOKEN=any-random-string

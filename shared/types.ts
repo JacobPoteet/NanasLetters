@@ -84,6 +84,15 @@ export interface AdminCalendarSummary {
   pendingReviewDates: string[];
 }
 
+/** Family-facing archive totals for the homepage welcome line. */
+export interface ArchiveStats {
+  totalLetters: number;
+  firstDate: string; // YYYY-MM-DD
+  lastDate: string; // YYYY-MM-DD
+  /** null only when the archive is genuinely empty — see Home's fallback. */
+  firstLetterId: number | null;
+}
+
 /** Anonymous, operational-visibility-only usage summary (GitHub #8) — no per-person tracking. */
 export interface AnalyticsSummary {
   windowDays: number;

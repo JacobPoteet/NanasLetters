@@ -37,6 +37,17 @@ async function resolveRole(passphrase: string, env: Env): Promise<Role | null> {
   return null;
 }
 
+async function startSession(c: Context<{ Bindings: Env }>, role: Role): Promise<void> {
+  const token = await createToken(role, SESSION_TTL_MS, c.env.SESSION_SECRET);
+  setCookie(c, SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    path: "/",
+    maxAge: SESSION_TTL_MS / 1000,
+  });
+}
+
 app.post("/login", async (c) => {
   let body: { passphrase?: string };
   try {
@@ -49,15 +60,26 @@ app.post("/login", async (c) => {
   const role = await resolveRole(body.passphrase, c.env);
   if (!role) return c.json({ error: "Wrong passphrase" }, 401);
 
-  const token = await createToken(role, SESSION_TTL_MS, c.env.SESSION_SECRET);
-  setCookie(c, SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
-    path: "/",
-    maxAge: SESSION_TTL_MS / 1000,
-  });
+  await startSession(c, role);
   return c.json({ ok: true, role });
+});
+
+// `npm run admin` — a local-dev-only shortcut that opens a browser straight
+// into a logged-in admin session instead of typing the admin passphrase in
+// by hand. Gated on DEV_LOGIN_TOKEN, a secret that only ever exists in a
+// developer's own .dev.vars: it's never `wrangler secret put`, never a
+// GitHub Actions secret, so c.env.DEV_LOGIN_TOKEN is always unset in every
+// real deployment and this route 404s unconditionally there — same "absent
+// binding means the feature doesn't exist here" posture as /photos/:key.
+app.get("/dev-login", async (c) => {
+  const expected = c.env.DEV_LOGIN_TOKEN;
+  const supplied = c.req.query("token");
+  if (!expected || !supplied || !(await passphraseMatches(supplied, expected))) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  await startSession(c, "admin");
+  return c.redirect("/admin");
 });
 
 app.post("/logout", (c) => {
