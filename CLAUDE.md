@@ -112,7 +112,7 @@ Do not let `npm test` silently mean "the fast subset." One command, no flags, ru
 What's still open, now tracked as milestone 1.1.0:
 
 - **Ongoing ingestion is on hold, deliberately** (Jacob's call). `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REFRESH_TOKEN` remain unset; the live Gmail-API code path (list → fetch → parse → resolve meditation link → dedupe/review-queue) is written and unit-tested down to the pure folds, just never run against the live API, and the site currently has no automatic way to receive a letter Nana sends tomorrow.
-- **Real alerting on ingestion failure** (and now backup failure too) is [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2) — currently just `console.error` for both.
+- **Real alerting on ingestion/backup failure** is [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2) — currently `console.error` for both, deliberately on hold: Cloudflare Email Sending needs a domain onboarded to the account for the `from` address, and this account only has the `*.workers.dev` URL. Revisit once there's a domain (or another alert channel is decided). Ingestion's own false-failure noise (attempting the Gmail OAuth exchange nightly with empty credentials while #6 is on hold) is fixed separately — it now skips cleanly instead of throwing.
 - The review queue's 91 items are processable now (see #11 below) but not yet gone through by hand.
 
 ### What's next — milestone 1.1.0
