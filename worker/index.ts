@@ -41,8 +41,8 @@ export default {
         .catch((err) => {
           // See CLAUDE.md's "Ingestion health monitoring" note: a silent
           // failure here is exactly the risk of depending on one OAuth token
-          // forever. This at minimum needs a real alert before this project
-          // is trusted to run unattended — tracked as follow-up, not v1.
+          // forever. console.error is a stopgap, not the fix — tracked as
+          // https://github.com/JacobPoteet/NanasLetters/issues/2.
           console.error(JSON.stringify({ message: "ingestion run FAILED", error: String(err) }));
         }),
     );
