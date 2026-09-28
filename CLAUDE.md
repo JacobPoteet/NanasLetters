@@ -117,14 +117,12 @@ What's still open, now tracked as milestone 1.1.0:
 
 ### What's next — milestone 1.1.0
 
-Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/milestone/1](https://github.com/JacobPoteet/NanasLetters/milestone/1). This list exists so a fresh session can pick up the plan without re-deriving it. Done since v1.0.0: [#4](https://github.com/JacobPoteet/NanasLetters/issues/4) (deploy), [#5](https://github.com/JacobPoteet/NanasLetters/issues/5) (backfill to prod), [#11](https://github.com/JacobPoteet/NanasLetters/issues/11) (review-queue accept actually creates a letter), [#9](https://github.com/JacobPoteet/NanasLetters/issues/9) (automated D1→R2 backup).
+Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/milestone/1](https://github.com/JacobPoteet/NanasLetters/milestone/1). This list exists so a fresh session can pick up the plan without re-deriving it. Done since v1.0.0: [#4](https://github.com/JacobPoteet/NanasLetters/issues/4) (deploy), [#5](https://github.com/JacobPoteet/NanasLetters/issues/5) (backfill to prod), [#11](https://github.com/JacobPoteet/NanasLetters/issues/11) (review-queue accept actually creates a letter), [#9](https://github.com/JacobPoteet/NanasLetters/issues/9) (automated D1→R2 backup), [#10](https://github.com/JacobPoteet/NanasLetters/issues/10) (retention policy), [#7](https://github.com/JacobPoteet/NanasLetters/issues/7) (admin nav shell + browse/search).
 
 - [#6](https://github.com/JacobPoteet/NanasLetters/issues/6) — decide and implement ongoing ingestion (Gmail OAuth polling vs. Cloudflare Email Routing), currently on hold.
 - [#2](https://github.com/JacobPoteet/NanasLetters/issues/2) — real ingestion/backup-failure alerting.
 - [#3](https://github.com/JacobPoteet/NanasLetters/issues/3) — admin: yearly calendar view (entry counts per day, red/green, pips for multiples).
-- [#7](https://github.com/JacobPoteet/NanasLetters/issues/7) — admin: a real nav shell + browse/search to find any of the ~2,850 letters to edit (today the edit form is only reachable from a letter you already found via the family-facing pages).
 - [#8](https://github.com/JacobPoteet/NanasLetters/issues/8) — admin: basic usage analytics (visits, letters read, device counts), mirroring Lunch Special's `analytics_visits`/`analytics_rounds` pattern — anonymous, operational visibility only ("is this working, roughly what scale"), explicitly not engagement optimization or per-person tracking.
-- [#10](https://github.com/JacobPoteet/NanasLetters/issues/10) — decide and document letter retention policy.
 - [#12](https://github.com/JacobPoteet/NanasLetters/issues/12) — admin: delete/merge a duplicate letter.
 - [#13](https://github.com/JacobPoteet/NanasLetters/issues/13) — family-facing pages have no responsive/mobile layout.
 

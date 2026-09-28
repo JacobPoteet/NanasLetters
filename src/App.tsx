@@ -10,6 +10,8 @@ import { LetterPage } from "./pages/Letter";
 import { LoginPage } from "./pages/Login";
 import { AdminPage } from "./pages/Admin";
 import { AdminEditLetterPage } from "./pages/AdminEditLetter";
+import { AdminBrowsePage } from "./pages/AdminBrowse";
+import { AdminShell } from "./components/AdminNav";
 
 function matchId(pattern: RegExp, path: string): number | null {
   const match = pattern.exec(path);
@@ -33,20 +35,30 @@ export function App() {
 
   const letterId = matchId(/^\/letters\/(\d+)$/, path);
   const adminEditId = role === "admin" ? matchId(/^\/admin\/letters\/(\d+)$/, path) : null;
+  const isAdminBrowse = role === "admin" && path === "/admin/browse";
+  const isAdminReview = role === "admin" && path === "/admin";
 
   return (
     <div className="page">
       <Header role={role} onLoggedOut={() => setRole(null)} />
       {adminEditId !== null ? (
-        <AdminEditLetterPage id={adminEditId} />
+        <AdminShell>
+          <AdminEditLetterPage id={adminEditId} />
+        </AdminShell>
+      ) : isAdminBrowse ? (
+        <AdminShell>
+          <AdminBrowsePage />
+        </AdminShell>
+      ) : isAdminReview ? (
+        <AdminShell>
+          <AdminPage />
+        </AdminShell>
       ) : letterId !== null ? (
         <LetterPage id={letterId} role={role} />
       ) : path === "/browse" ? (
         <BrowsePage />
       ) : path === "/search" ? (
         <SearchPage />
-      ) : path === "/admin" && role === "admin" ? (
-        <AdminPage />
       ) : (
         <HomePage />
       )}
