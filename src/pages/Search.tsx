@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SearchResult, SearchSort } from "../../shared/types";
+import type { ArchiveStats, SearchResult, SearchSort } from "../../shared/types";
 import { decodeSearchQuery, encodeSearchQuery } from "../../shared/searchQuery";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
@@ -26,9 +26,11 @@ export function SearchPage({ search }: { search: string }) {
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+  const [stats, setStats] = useState<ArchiveStats | null>(null);
 
   useEffect(() => {
     trackVisit("search");
+    api.stats().then(setStats).catch(() => {});
   }, []);
 
   // The URL's query string is the source of truth for what's being searched,
@@ -104,6 +106,8 @@ export function SearchPage({ search }: { search: string }) {
             setTo(r.to);
           }}
           placeholder="Any date"
+          archiveStart={stats?.firstDate}
+          archiveEnd={stats?.lastDate}
         />
       </div>
 
