@@ -1,6 +1,7 @@
 import type {
   AdminCalendarSummary,
   AnalyticsSummary,
+  ArchiveStats,
   Letter,
   OnThisDayResult,
   LetterSummary,
@@ -26,6 +27,7 @@ export const api = {
     request<{ ok: true; role: Role }>("/login", { method: "POST", body: JSON.stringify({ passphrase }) }),
   logout: () => request<{ ok: true }>("/logout", { method: "POST" }),
   onThisDay: (date?: string) => request<OnThisDayResult>(`/on-this-day${date ? `?date=${date}` : ""}`),
+  stats: () => request<ArchiveStats>("/stats"),
   browse: (params: { year?: number; month?: number; before?: { date: string; id: number } }) => {
     const query = new URLSearchParams();
     if (params.year) query.set("year", String(params.year));

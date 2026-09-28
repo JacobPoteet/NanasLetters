@@ -116,6 +116,64 @@ button {
   line-height: 1.5;
 }
 
+/* Homepage welcome section — a masthead lead-in above "On this day," not a
+   dashboard: the stat treatment reuses the site's existing "big serif number
+   = important" idiom (see .letter-card__year) instead of introducing boxed
+   KPI cards. */
+.home-masthead {
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border);
+}
+
+.home-masthead__intro {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 58ch;
+  margin: 0;
+}
+
+.home-masthead__stats {
+  display: flex;
+  margin-top: 32px;
+}
+
+.home-stat {
+  padding: 0 28px;
+  border-left: 1px solid var(--border);
+}
+
+.home-stat:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.home-stat__value {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 34px;
+  color: var(--accent);
+}
+
+.home-stat__label {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.home-masthead__links {
+  display: flex;
+  gap: 28px;
+  margin-top: 28px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.home-onthisday {
+  margin-top: 48px;
+}
+
 .letter-list {
   margin-top: 40px;
   border-top: 1px solid var(--border);
@@ -135,6 +193,18 @@ button {
   font-size: 32px;
   color: var(--accent);
   min-width: 92px;
+}
+
+/* Browse's per-row date, once the year moved into a sticky group header —
+   see .browse-year-header. Deliberately smaller and quieter than
+   .letter-card__year: repeating a giant accent-colored year on every row of
+   a year-grouped list is what made the raw date hard to read before. */
+.letter-card__date {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--ink-muted);
+  min-width: 92px;
+  padding-top: 3px;
 }
 
 .letter-card__body {
@@ -249,6 +319,92 @@ button {
   background: none;
   color: var(--accent);
   font-weight: 600;
+}
+
+.search-result-count {
+  font-size: 13px;
+  color: var(--ink-faint);
+  padding-top: 24px;
+}
+
+/* Browse's year quick-filter — reuses the backend's existing year param
+   (worker/db.ts's browseLetters already accepted it; only the UI was
+   missing) so wandering within one year doesn't mean blind scrolling. */
+.browse-year-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.browse-year-filter__chip {
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.browse-year-filter__chip:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.browse-year-filter__chip--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.letter-list--grouped {
+  border-top: none;
+}
+
+.browse-year-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 32px;
+  color: var(--accent);
+  margin: 0;
+  padding: 24px 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.browse-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  padding: 18px 0 4px;
+}
+
+/* One quiet, universal scroll reveal (CLAUDE.md's scroll-experience pass) —
+   native CSS scroll-driven animation, zero new dependencies. Guarded by
+   prefers-reduced-motion, and safe if animation-timeline isn't supported:
+   with no timeline driving it, the 0s default duration resolves straight to
+   the "to" keyframe, so content just renders fully visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-on-scroll {
+    animation: reveal-on-scroll-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+}
+
+@keyframes reveal-on-scroll-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-form {
@@ -435,6 +591,29 @@ button {
 
   .letter-card__year {
     min-width: 0;
+    font-size: 24px;
+  }
+
+  .letter-card__date {
+    min-width: 0;
+  }
+
+  .home-masthead__stats {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .home-stat {
+    padding: 0;
+    border-left: none;
+  }
+
+  .home-masthead__links {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .browse-year-header {
     font-size: 24px;
   }
 

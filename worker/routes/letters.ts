@@ -2,10 +2,14 @@
 // session — the guard is mounted in index.ts, ahead of this router.
 
 import { Hono } from "hono";
-import { browseLetters, getAdjacentLetterId, getLetterById, getOnThisDay, searchLetters } from "../db";
+import { browseLetters, getAdjacentLetterId, getArchiveStats, getLetterById, getOnThisDay, searchLetters } from "../db";
 import { todayMonthDay } from "../dateWindow";
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.get("/stats", async (c) => {
+  return c.json(await getArchiveStats(c.env.DB));
+});
 
 app.get("/on-this-day", async (c) => {
   const monthDay = c.req.query("date") ?? todayMonthDay();
