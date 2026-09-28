@@ -63,9 +63,14 @@ function findForwardBoundary(text: string): number | null {
   return earliest;
 }
 
-// Matches both eras' subject shapes: "Fwd: Richard Rohr Meditation: X" (2018)
-// and "Fw: Richard Rohr's Daily Meditation: X" (2023+).
-const MEDITATION_SUBJECT = /^f(?:w|wd):\s*richard rohr'?s?\s+(?:daily\s+)?meditations?:\s*(.+)$/i;
+// Matches every subject shape found so far: "Fwd: Richard Rohr Meditation: X"
+// (2018), "Fw: Richard Rohr's Daily Meditation: X" (2023), and "Fw: Richard
+// Rohr's Daily Meditations: X" (2026, plural "Meditations"). The apostrophe
+// class matters: real 2026 subjects use the Unicode curly apostrophe (’,
+// U+2019), not the ASCII one (', U+0027) — confirmed against the real
+// backfill data, where every single 2026 letter failed this match until the
+// class included it.
+const MEDITATION_SUBJECT = /^f(?:w|wd):\s*richard rohr['’]?s?\s+(?:daily\s+)?meditations?:\s*(.+)$/i;
 
 function parseMeditationTitle(subject: string): { title: string | null; unexpectedSubject: boolean } {
   const match = MEDITATION_SUBJECT.exec(subject.trim());

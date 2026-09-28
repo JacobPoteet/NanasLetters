@@ -115,6 +115,20 @@ describe("extractLetter", () => {
     expect(result.needsReview).toBe(false);
   });
 
+  it("matches a real 2026 subject using the Unicode curly apostrophe, not an ASCII one", () => {
+    // Found by running the real Google Takeout backfill: every single 2026
+    // letter failed subject parsing until this was fixed — the newsletter's
+    // subject line uses ’ (U+2019), not ' (U+0027).
+    const result = extractLetter(
+      message({
+        subject: "Fw: Richard Rohr’s Daily Meditations: From Suffering to Sacred Wounds",
+        plainTextBody: "Note.\n\n----- Forwarded Message -----\nFrom: x",
+      }),
+    );
+    expect(result.meditationTitle).toBe("From Suffering to Sacred Wounds");
+    expect(result.needsReview).toBe(false);
+  });
+
   it("picks up the meditation link href when the HTML body has one", () => {
     const html =
       '<p>Note.</p><a href="https://email.cac.org/t/d-l-wjjudhk-tlkrtkdrx-y/">READ ON CAC.ORG</a>' +
