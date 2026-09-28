@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { LetterSummary } from "../../shared/types";
 import { api } from "../api";
+import { trackVisit } from "../analytics";
 import { Link } from "../router";
 
 export function BrowsePage() {
@@ -12,6 +13,7 @@ export function BrowsePage() {
       .browse({})
       .then((r) => setLetters(r.letters))
       .catch((err) => setError(err.message));
+    trackVisit("browse");
   }, []);
 
   async function loadMore() {

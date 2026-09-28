@@ -1,4 +1,15 @@
-import type { Letter, LetterSummary, OnThisDayResult, Photo, ReviewQueueItem, SearchResult } from "../shared/types";
+import type {
+  AnalyticsDay,
+  AnalyticsPage,
+  AnalyticsSummary,
+  Letter,
+  LetterSummary,
+  MostReadLetter,
+  OnThisDayResult,
+  Photo,
+  ReviewQueueItem,
+  SearchResult,
+} from "../shared/types";
 import { nearbyMonthDays } from "./dateWindow";
 import { buildFtsQuery, escapeAndMarkSnippet, SNIPPET_MARK_END, SNIPPET_MARK_START } from "./search";
 
@@ -364,4 +375,75 @@ export async function acceptReviewItem(
     db.prepare("UPDATE review_queue SET status = 'resolved' WHERE id = ?1").bind(id),
   ]);
   return insertResult.meta.last_row_id;
+}
+
+// --- Analytics (GitHub #8) — anonymous, operational visibility only ---
+
+export async function recordVisit(
+  db: D1Database,
+  visit: { deviceId: string; page: AnalyticsPage; letterId: number | null },
+): Promise<void> {
+  await db
+    .prepare("INSERT INTO analytics_visits (visit_day, device_id, page, letter_id) VALUES (date('now'), ?1, ?2, ?3)")
+    .bind(visit.deviceId, visit.page, visit.letterId)
+    .run();
+}
+
+const ANALYTICS_WINDOW_DAYS = 30;
+
+export async function getAnalyticsSummary(db: D1Database): Promise<AnalyticsSummary> {
+  const [totals, homeInWindow, newToday, daily, mostReadRows] = await Promise.all([
+    db.prepare("SELECT count(*) as visits, count(distinct device_id) as devices FROM analytics_visits").first<{
+      visits: number;
+      devices: number;
+    }>(),
+    db
+      .prepare(
+        `SELECT count(*) as c FROM analytics_visits
+         WHERE page = 'home' AND visit_day >= date('now', ?1)`,
+      )
+      .bind(`-${ANALYTICS_WINDOW_DAYS} days`)
+      .first<{ c: number }>(),
+    db
+      .prepare(
+        `SELECT count(*) as c FROM (
+           SELECT device_id, min(visit_day) as first_day FROM analytics_visits GROUP BY device_id
+         ) WHERE first_day = date('now')`,
+      )
+      .first<{ c: number }>(),
+    db
+      .prepare(
+        `SELECT visit_day as day, count(*) as visits, count(distinct device_id) as devices
+         FROM analytics_visits
+         WHERE visit_day >= date('now', ?1)
+         GROUP BY visit_day ORDER BY visit_day ASC`,
+      )
+      .bind(`-${ANALYTICS_WINDOW_DAYS} days`)
+      .all<AnalyticsDay>(),
+    db
+      .prepare(
+        `SELECT av.letter_id as letterId, l.date as date, l.text as text, count(*) as reads
+         FROM analytics_visits av JOIN letters l ON l.id = av.letter_id
+         WHERE av.page = 'letter'
+         GROUP BY av.letter_id ORDER BY reads DESC LIMIT 10`,
+      )
+      .all<{ letterId: number; date: string; text: string; reads: number }>(),
+  ]);
+
+  const mostRead: MostReadLetter[] = (mostReadRows.results ?? []).map((r) => ({
+    letterId: r.letterId,
+    date: r.date,
+    excerpt: excerptOf(r.text),
+    reads: r.reads,
+  }));
+
+  return {
+    windowDays: ANALYTICS_WINDOW_DAYS,
+    totalVisits: totals?.visits ?? 0,
+    totalDevices: totals?.devices ?? 0,
+    homeVisitsInWindow: homeInWindow?.c ?? 0,
+    newDevicesToday: newToday?.c ?? 0,
+    daily: daily.results ?? [],
+    mostRead,
+  };
 }

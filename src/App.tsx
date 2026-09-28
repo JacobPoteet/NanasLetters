@@ -11,6 +11,7 @@ import { LoginPage } from "./pages/Login";
 import { AdminPage } from "./pages/Admin";
 import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
+import { AdminAnalyticsPage } from "./pages/AdminAnalytics";
 import { AdminShell } from "./components/AdminNav";
 
 function matchId(pattern: RegExp, path: string): number | null {
@@ -36,6 +37,7 @@ export function App() {
   const letterId = matchId(/^\/letters\/(\d+)$/, path);
   const adminEditId = role === "admin" ? matchId(/^\/admin\/letters\/(\d+)$/, path) : null;
   const isAdminBrowse = role === "admin" && path === "/admin/browse";
+  const isAdminAnalytics = role === "admin" && path === "/admin/analytics";
   const isAdminReview = role === "admin" && path === "/admin";
 
   return (
@@ -48,6 +50,10 @@ export function App() {
       ) : isAdminBrowse ? (
         <AdminShell>
           <AdminBrowsePage />
+        </AdminShell>
+      ) : isAdminAnalytics ? (
+        <AdminShell>
+          <AdminAnalyticsPage />
         </AdminShell>
       ) : isAdminReview ? (
         <AdminShell>

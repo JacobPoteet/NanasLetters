@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { LetterSummary, OnThisDayResult } from "../../shared/types";
 import { api } from "../api";
+import { trackVisit } from "../analytics";
 import { Link } from "../router";
 
 const MONTH_NAMES = [
@@ -34,6 +35,7 @@ export function HomePage() {
 
   useEffect(() => {
     api.onThisDay().then(setResult).catch((err) => setError(err.message));
+    trackVisit("home");
   }, []);
 
   if (error) return <div className="content error-text">{error}</div>;

@@ -7,6 +7,7 @@ import {
   acceptReviewItem,
   deleteLetter,
   dismissReviewItem,
+  getAnalyticsSummary,
   getLetterById,
   getReviewItemById,
   listReviewQueue,
@@ -14,6 +15,10 @@ import {
 } from "../db";
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.get("/analytics", async (c) => {
+  return c.json(await getAnalyticsSummary(c.env.DB));
+});
 
 app.get("/review-queue", async (c) => {
   const status = c.req.query("status") ?? "pending";

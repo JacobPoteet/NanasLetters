@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Letter, Role } from "../../shared/types";
 import { api } from "../api";
+import { trackVisit } from "../analytics";
 import { Link } from "../router";
 
 function formatDate(iso: string): string {
@@ -23,6 +24,7 @@ export function LetterPage({ id, role }: { id: number; role: Role }) {
       .letter(id)
       .then(setData)
       .catch((err) => setError(err.message));
+    trackVisit("letter", id);
   }, [id]);
 
   if (error) return <div className="content error-text">{error}</div>;

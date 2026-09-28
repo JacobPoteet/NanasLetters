@@ -56,3 +56,33 @@ export interface ReviewQueueItem {
   rawText: string;
   status: "pending" | "resolved" | "dismissed";
 }
+
+export type AnalyticsPage = "home" | "browse" | "letter" | "search";
+
+/** One day's visits/devices in the admin analytics trend chart. */
+export interface AnalyticsDay {
+  day: string; // YYYY-MM-DD
+  visits: number;
+  devices: number;
+}
+
+/** One row in the "most read" panel. */
+export interface MostReadLetter {
+  letterId: number;
+  date: string;
+  excerpt: string;
+  reads: number;
+}
+
+/** Anonymous, operational-visibility-only usage summary (GitHub #8) — no per-person tracking. */
+export interface AnalyticsSummary {
+  windowDays: number;
+  totalVisits: number;
+  totalDevices: number;
+  homeVisitsInWindow: number;
+  newDevicesToday: number;
+  /** Oldest first, one entry per day with any activity in the window. */
+  daily: AnalyticsDay[];
+  /** Most-read letters all time, most-read first. */
+  mostRead: MostReadLetter[];
+}

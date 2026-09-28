@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SearchResult } from "../../shared/types";
 import { api } from "../api";
+import { trackVisit } from "../analytics";
 import { Link } from "../router";
 
 export function SearchPage() {
@@ -9,6 +10,10 @@ export function SearchPage() {
   const [to, setTo] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    trackVisit("search");
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

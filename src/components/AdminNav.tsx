@@ -10,6 +10,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <nav style={{ display: "flex", gap: 20, padding: "12px 24px", borderBottom: "1px solid #ccc", fontSize: 14 }}>
         <Link to="/admin">Review queue</Link>
         <Link to="/admin/browse">Browse &amp; edit letters</Link>
+        <Link to="/admin/analytics">Usage</Link>
       </nav>
       {children}
     </div>

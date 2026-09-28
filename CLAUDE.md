@@ -122,9 +122,7 @@ Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/mile
 - [#6](https://github.com/JacobPoteet/NanasLetters/issues/6) — decide and implement ongoing ingestion (Gmail OAuth polling vs. Cloudflare Email Routing), currently on hold.
 - [#2](https://github.com/JacobPoteet/NanasLetters/issues/2) — real ingestion/backup-failure alerting.
 - [#3](https://github.com/JacobPoteet/NanasLetters/issues/3) — admin: yearly calendar view (entry counts per day, red/green, pips for multiples).
-- [#8](https://github.com/JacobPoteet/NanasLetters/issues/8) — admin: basic usage analytics (visits, letters read, device counts), mirroring Lunch Special's `analytics_visits`/`analytics_rounds` pattern — anonymous, operational visibility only ("is this working, roughly what scale"), explicitly not engagement optimization or per-person tracking.
-- [#12](https://github.com/JacobPoteet/NanasLetters/issues/12) — admin: delete/merge a duplicate letter.
-- [#13](https://github.com/JacobPoteet/NanasLetters/issues/13) — family-facing pages have no responsive/mobile layout.
+Also done: [#12](https://github.com/JacobPoteet/NanasLetters/issues/12) (admin delete for a duplicate letter), [#13](https://github.com/JacobPoteet/NanasLetters/issues/13) (responsive layout for the five family-facing pages), [#8](https://github.com/JacobPoteet/NanasLetters/issues/8) (usage analytics — `analytics_visits`, a fire-and-forget beacon from each family-facing page keyed by a client-generated device id in localStorage, an admin panel at `/admin/analytics` showing visits/devices per day, home-page hits, and most-read letters; deliberately much smaller than Lunch Special's `analytics_rounds`/`analytics_engine` pattern it was scoped against — no funnels, cohorts, retention curves, or rhythm heatmaps, since the issue's own scope is "is this working, roughly what scale," not engagement optimization).
 
 ## Deploy to Cloudflare **[done — kept here as the record of what was bootstrapped]**
 
