@@ -11,6 +11,7 @@ import type {
   Photo,
   ReviewQueueItem,
   SearchResult,
+  SearchSort,
 } from "../shared/types";
 import { nearbyMonthDays } from "./dateWindow";
 import { buildFtsQuery, escapeAndMarkSnippet, SNIPPET_MARK_END, SNIPPET_MARK_START } from "./search";
@@ -178,9 +179,10 @@ interface SearchRow {
 export async function searchLetters(
   db: D1Database,
   query: string,
-  options: { from?: string; to?: string; limit?: number } = {},
+  options: { from?: string; to?: string; limit?: number; sort?: SearchSort } = {},
 ): Promise<SearchResult[]> {
   const ftsQuery = buildFtsQuery(query);
+  const sort = options.sort ?? "relevance";
 
   // No words typed: with no date filter either, there's nothing to search
   // for — but a date range alone is a real request ("everything from March
@@ -203,9 +205,12 @@ export async function searchLetters(
     }
     params.push(options.limit ?? 20);
 
+    // No FTS match to rank, so "relevance" falls back to newest-first here —
+    // the same date-only read this whole branch already is.
+    const order = sort === "oldest" ? "date ASC, id ASC" : "date DESC, id DESC";
     const rows = await db
       .prepare(
-        `SELECT id, date, text FROM letters WHERE ${conditions.join(" AND ")} ORDER BY date DESC, id DESC LIMIT ?${params.length}`,
+        `SELECT id, date, text FROM letters WHERE ${conditions.join(" AND ")} ORDER BY ${order} LIMIT ?${params.length}`,
       )
       .bind(...params)
       .all<{ id: number; date: string; text: string }>();
@@ -237,13 +242,14 @@ export async function searchLetters(
   }
   params.push(options.limit ?? 20);
 
+  const order = sort === "newest" ? "l.date DESC, l.id DESC" : sort === "oldest" ? "l.date ASC, l.id ASC" : "rank";
   const rows = await db
     .prepare(
       `SELECT l.id, l.date, snippet(letters_fts, 0, ?${startIdx}, ?${endIdx}, '…', 12) AS snippet
        FROM letters_fts
        JOIN letters l ON l.id = letters_fts.rowid
        WHERE ${conditions.join(" AND ")}
-       ORDER BY rank
+       ORDER BY ${order}
        LIMIT ?${params.length}`,
     )
     .bind(...params)

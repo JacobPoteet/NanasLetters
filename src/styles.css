@@ -284,10 +284,36 @@ button {
   font-weight: 600;
 }
 
+.search-result-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+}
+
 .search-result-count {
   font-size: 13px;
   color: var(--ink-faint);
-  padding-top: 24px;
+}
+
+.search-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.search-sort select {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
 }
 
 /* Browse's year quick-filter — reuses the backend's existing year param
@@ -583,6 +609,12 @@ button {
   .search-form {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .search-result-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .letter-nav {

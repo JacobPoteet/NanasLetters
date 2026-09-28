@@ -7,6 +7,7 @@ import type {
   LetterSummary,
   Role,
   SearchResult,
+  SearchSort,
 } from "../shared/types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -47,10 +48,11 @@ export const api = {
   deleteLetter: (id: number) => request<{ ok: true }>(`/admin/letters/${id}`, { method: "DELETE" }),
   analyticsSummary: () => request<AnalyticsSummary>("/admin/analytics"),
   calendarSummary: () => request<AdminCalendarSummary>("/admin/calendar"),
-  search: (q: string, from?: string, to?: string) => {
+  search: (q: string, from?: string, to?: string, sort?: SearchSort) => {
     const query = new URLSearchParams({ q });
     if (from) query.set("from", from);
     if (to) query.set("to", to);
+    if (sort) query.set("sort", sort);
     return request<{ results: SearchResult[] }>(`/search?${query}`);
   },
 };

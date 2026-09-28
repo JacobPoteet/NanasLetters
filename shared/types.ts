@@ -43,6 +43,9 @@ export interface SearchResult {
   snippetHtml: string;
 }
 
+/** "relevance" only means anything alongside a text query — see searchLetters in worker/db.ts. */
+export type SearchSort = "relevance" | "newest" | "oldest";
+
 export type ReviewReason =
   | "no_forward_marker"
   | "unexpected_subject"
