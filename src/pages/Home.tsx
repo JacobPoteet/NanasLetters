@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ArchiveStats, LetterSummary, OnThisDayResult } from "../../shared/types";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
@@ -16,7 +16,7 @@ function formatMonthDay(monthDay: string): string {
 
 function formatMonthYear(date: string): string {
   const [year, month] = date.split("-").map(Number);
-  return `${MONTH_NAMES[month - 1].slice(0, 3)} ${year}`;
+  return `${MONTH_NAMES[month - 1]} ${year}`;
 }
 
 function LetterCard({ letter }: { letter: LetterSummary }) {
@@ -30,57 +30,6 @@ function LetterCard({ letter }: { letter: LetterSummary }) {
         </Link>
       </div>
       {letter.hasPhoto && <div className="photo-placeholder">photo</div>}
-    </div>
-  );
-}
-
-/** Counts a stat up from 0 once, on first render. A no-op under reduced motion — the final value renders immediately. */
-function useCountUp(target: number, durationMs = 900): number {
-  const [value, setValue] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? target : 0,
-  );
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setValue(target);
-      return;
-    }
-
-    const start = performance.now();
-    let frame: number;
-    function tick(now: number) {
-      const progress = Math.min((now - start) / durationMs, 1);
-      const eased = 1 - (1 - progress) * (1 - progress);
-      setValue(Math.round(target * eased));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-    }
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [target, durationMs]);
-
-  return value;
-}
-
-function WelcomeStats({ stats }: { stats: ArchiveStats }) {
-  const totalLetters = useCountUp(stats.totalLetters);
-
-  return (
-    <div className="home-masthead__stats">
-      <div className="home-stat">
-        <div className="home-stat__value">{totalLetters.toLocaleString()}</div>
-        <div className="home-stat__label">letters kept</div>
-      </div>
-      <div className="home-stat">
-        <div className="home-stat__value">{formatMonthYear(stats.firstDate)}</div>
-        <div className="home-stat__label">the first one</div>
-      </div>
-      <div className="home-stat">
-        <div className="home-stat__value">{formatMonthYear(stats.lastDate)}</div>
-        <div className="home-stat__label">most recent</div>
-      </div>
     </div>
   );
 }
@@ -100,25 +49,20 @@ export function HomePage() {
   if (!result) return <div className="content">Loading…</div>;
 
   const showingNearby = result.exact.length === 0;
+  // Genuinely empty archive (an unseeded local dev DB, say) — a "0 letters
+  // kept" line would read as broken, not informative, so skip it entirely.
+  const showMasthead = stats !== null && stats.totalLetters > 0 && stats.firstLetterId !== null;
 
   return (
     <div className="content">
-      {stats && (
-        <div className="home-masthead">
-          <p className="home-masthead__intro">
-            Since February 2018, Nana has written every morning — her garden, her coffee, her grandkids, whatever's
-            on her mind that day — just above the meditation she forwards along. This is where those mornings are
-            kept.
-          </p>
-          <WelcomeStats stats={stats} />
-          <div className="home-masthead__links">
-            <Link to="/browse">Browse every letter →</Link>
-            <Link to="/search">Search the archive →</Link>
-          </div>
-        </div>
+      {showMasthead && (
+        <p className="home-masthead">
+          {stats.totalLetters.toLocaleString()} letters, kept since {formatMonthYear(stats.firstDate)} —{" "}
+          <Link to={`/letters/${stats.firstLetterId}`}>including the very first one →</Link>
+        </p>
       )}
 
-      <div className={stats ? "home-onthisday" : undefined}>
+      <div className={showMasthead ? "home-onthisday" : undefined}>
         <div className="eyebrow">On this day</div>
         <div className="big-date">{formatMonthDay(result.monthDay)}</div>
         <div className="subtext">Letters written on this day, across the years.</div>

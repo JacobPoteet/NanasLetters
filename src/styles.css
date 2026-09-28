@@ -116,62 +116,25 @@ button {
   line-height: 1.5;
 }
 
-/* Homepage welcome section — a masthead lead-in above "On this day," not a
-   dashboard: the stat treatment reuses the site's existing "big serif number
-   = important" idiom (see .letter-card__year) instead of introducing boxed
-   KPI cards. */
+/* Homepage welcome line above "On this day" — one sentence, not a stat-tile
+   row: a boxed "big number + label" masthead was tried and cut (it read as
+   a dashboard bolted onto a family archive, and told nobody anything they
+   cared about). The number and date do their work inline in prose instead,
+   and the one link goes somewhere real (the actual first letter) rather
+   than sitting there as decoration. */
 .home-masthead {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 58ch;
+  margin: 0 0 40px;
   padding-bottom: 40px;
   border-bottom: 1px solid var(--border);
 }
 
-.home-masthead__intro {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  line-height: 1.6;
-  color: var(--ink);
-  max-width: 58ch;
-  margin: 0;
-}
-
-.home-masthead__stats {
-  display: flex;
-  margin-top: 32px;
-}
-
-.home-stat {
-  padding: 0 28px;
-  border-left: 1px solid var(--border);
-}
-
-.home-stat:first-child {
-  padding-left: 0;
-  border-left: none;
-}
-
-.home-stat__value {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 34px;
-  color: var(--accent);
-}
-
-.home-stat__label {
-  font-size: 13px;
-  color: var(--ink-muted);
-  margin-top: 4px;
-}
-
-.home-masthead__links {
-  display: flex;
-  gap: 28px;
-  margin-top: 28px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 .home-onthisday {
-  margin-top: 48px;
+  margin-top: 8px;
 }
 
 .letter-list {
@@ -598,19 +561,8 @@ button {
     min-width: 0;
   }
 
-  .home-masthead__stats {
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .home-stat {
-    padding: 0;
-    border-left: none;
-  }
-
-  .home-masthead__links {
-    flex-direction: column;
-    gap: 12px;
+  .home-masthead {
+    font-size: 17px;
   }
 
   .browse-year-header {

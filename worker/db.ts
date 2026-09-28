@@ -77,14 +77,22 @@ export async function getOnThisDay(db: D1Database, monthDay: string, nearbyWindo
 
 /** Homepage welcome-section totals — same MIN(date) pattern as getCalendarSummary, minus its review-queue detail. */
 export async function getArchiveStats(db: D1Database): Promise<ArchiveStats> {
-  const row = await db
-    .prepare("SELECT COUNT(*) AS total, MIN(date) AS firstDate, MAX(date) AS lastDate FROM letters")
-    .first<{ total: number; firstDate: string | null; lastDate: string | null }>();
+  // Two queries, not one: SQLite's "bare column rides along with MIN()/MAX()"
+  // trick only applies with a single aggregate in the query — this one has
+  // both MIN and MAX, so which row `id` would come from is undefined. A
+  // plain ORDER BY LIMIT 1 for the first letter's id is unambiguous.
+  const [totals, first] = await Promise.all([
+    db
+      .prepare("SELECT COUNT(*) AS total, MIN(date) AS firstDate, MAX(date) AS lastDate FROM letters")
+      .first<{ total: number; firstDate: string | null; lastDate: string | null }>(),
+    db.prepare("SELECT id FROM letters ORDER BY date ASC, id ASC LIMIT 1").first<{ id: number }>(),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
   return {
-    totalLetters: row?.total ?? 0,
-    firstDate: row?.firstDate ?? today,
-    lastDate: row?.lastDate ?? today,
+    totalLetters: totals?.total ?? 0,
+    firstDate: totals?.firstDate ?? today,
+    lastDate: totals?.lastDate ?? today,
+    firstLetterId: first?.id ?? null,
   };
 }
 
