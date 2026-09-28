@@ -15,7 +15,7 @@ Nothing below is locked in until noted otherwise. Sections marked **[decided]** 
 1. **Parsing experiment** (current phase): pull a sample of letters across different years from Gmail, figure out how to reliably separate Nana's own words from the meditation-email boilerplate/forwarding cruft she's replying inside of, and report conclusions before touching a database schema.
 2. **Functionality** (done — see "Functionality" section below): what the site actually does for a family member — read, search, browse.
 3. **Tech stack** (done — see "Tech stack" section below): chosen to serve #2, not assumed up front.
-4. **UI/layout**: elegant, clean, calming, ethereal, meditative — it should feel like the thing it's archiving, not like an admin dashboard. Welcoming to family members specifically, not a generic "cool site."
+4. **UI/layout** (done — see "UI/layout" section below): elegant, clean, calming, ethereal, meditative — it should feel like the thing it's archiving, not like an admin dashboard. Welcoming to family members specifically, not a generic "cool site."
 5. **First implementation pass + CI/CD**, mirroring Lunch Special's pipeline shape below.
 
 Open questions, sharper now than "undecided" but not yet **[decided]**:
@@ -69,6 +69,17 @@ One Cloudflare Worker, same shape as Lunch Special, chosen to serve the v1 funct
 - **Tooling**: mirrors Lunch Special exactly — vitest, oxlint, `tsc -b` with the same 3-project split (app/worker/node), for the muscle-memory reason stated in Commands below.
 
 **Deferred work gets a GitHub issue, not just a mental note.** When something is a real, valuable idea but doesn't belong in the current scope (v1, or whatever's being built next), file it on [the repo](https://github.com/JacobPoteet/NanasLetters) with labels (`enhancement`/`bug`/etc. plus `post-v1`, `performance`, `ingestion` as they fit) instead of letting it evaporate or bloating this file. [Issue #1](https://github.com/JacobPoteet/NanasLetters/issues/1) (photo resizing) is the first example.
+
+## UI/layout **[decided]**
+
+Direction settled by mocking up real pages rather than describing them in the abstract — see [the UI directions artifact](https://claude.ai/artifact/Cf726kBKBdrfoee2hYdTa1) (private; not shared outside this account) for the actual comparison and the two mocked pages. "Morning Paper" won over a cooler, more literally "ethereal" alternative because Nana's letters are about coffee, gardens, church, and grandkids — a kept letter, not a meditation app.
+
+- **Site name shown to family: "The Daily."** Not the same thing as the project/repo name ("Nana's Letters") — that stays as-is for the codebase, GitHub, and this file.
+- **Palette**: warm ivory background (`#F6F1E7`), near-black warm ink for text (`#2B241C`), a rust/terracotta accent for years and links (`#B0522D` / a lighter `#8A6A55` for link text), muted warm gray-brown for secondary text (`#6B5F4F`, `#9C8E76` for the faintest labels), hairline dividers at `#E4DACB`.
+- **Type**: Source Serif 4 for everything reading-facing (dates, headings, the letters themselves — display and body both, one family), Work Sans for UI chrome (nav, small labels, link affordances). Two typefaces, not three.
+- **The year is the visual anchor** on any list of letters (a large serif number, not a colored tag or a left-border strip) — deliberately avoided the generic-AI-template look (no gradient washes, no left-border cards, no emoji, no Inter/Roboto/Arial).
+- **The admin edit screen is explicitly exempt from this design bar** — same reasoning as Lunch Special's `/admin`: it's Jacob's own tool, not a family-facing surface, so utilitarian and fast beats calm and elegant there.
+- Real semantic elements throughout (`<a>`/`<button>`, not a styled `<div>` with a click handler) — this is a decided accessibility baseline, not just a mockup artifact convention.
 
 ## Commands **[decided: shape, not final names]**
 
