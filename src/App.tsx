@@ -8,6 +8,7 @@ import { BrowsePage } from "./pages/Browse";
 import { SearchPage } from "./pages/Search";
 import { LetterPage } from "./pages/Letter";
 import { LoginPage } from "./pages/Login";
+import { AdminRequiredPage } from "./pages/AdminRequired";
 import { AdminPage } from "./pages/Admin";
 import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
@@ -41,11 +42,15 @@ export function App() {
   const isAdminAnalytics = role === "admin" && path === "/admin/analytics";
   const isAdminCalendar = role === "admin" && path === "/admin/calendar";
   const isAdminReview = role === "admin" && path === "/admin";
+  const isAdminPath = path === "/admin" || path.startsWith("/admin/");
+  const needsAdminStepUp = role !== "admin" && isAdminPath;
 
   return (
     <div className="page">
       <Header role={role} onLoggedOut={() => setRole(null)} />
-      {adminEditId !== null ? (
+      {needsAdminStepUp ? (
+        <AdminRequiredPage onSteppedUp={setRole} />
+      ) : adminEditId !== null ? (
         <AdminShell>
           <AdminEditLetterPage id={adminEditId} />
         </AdminShell>
