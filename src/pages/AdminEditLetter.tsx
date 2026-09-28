@@ -6,9 +6,10 @@
 import { useEffect, useState } from "react";
 import type { Letter } from "../../shared/types";
 import { api } from "../api";
-import { Link } from "../router";
+import { Link, useRouter } from "../router";
 
 export function AdminEditLetterPage({ id }: { id: number }) {
+  const { navigate } = useRouter();
   const [letter, setLetter] = useState<Letter | null>(null);
   const [date, setDate] = useState("");
   const [text, setText] = useState("");
@@ -17,6 +18,8 @@ export function AdminEditLetterPage({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setLetter(null);
@@ -50,6 +53,18 @@ export function AdminEditLetterPage({ id }: { id: number }) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      await api.deleteLetter(id);
+      navigate("/admin/browse");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setDeleting(false);
     }
   }
 
@@ -114,6 +129,27 @@ export function AdminEditLetterPage({ id }: { id: number }) {
           </button>
         </div>
       </form>
+
+      <div style={{ marginTop: 32, paddingTop: 16, borderTop: "1px solid #ccc" }}>
+        {!confirmingDelete ? (
+          <button onClick={() => setConfirmingDelete(true)} style={{ color: "#a00" }}>
+            Delete this letter…
+          </button>
+        ) : (
+          <div style={{ color: "#a00" }}>
+            <p>
+              Permanently delete the letter from {date}? This can't be undone — only do this for a confirmed duplicate
+              that should have been merged.
+            </p>
+            <button onClick={handleDelete} disabled={deleting} style={{ color: "#a00", fontWeight: "bold" }}>
+              {deleting ? "Deleting…" : "Yes, permanently delete"}
+            </button>{" "}
+            <button onClick={() => setConfirmingDelete(false)} disabled={deleting}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

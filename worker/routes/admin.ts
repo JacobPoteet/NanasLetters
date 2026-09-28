@@ -3,7 +3,15 @@
 // ingestion review queue — see CLAUDE.md's Functionality section.
 
 import { Hono } from "hono";
-import { acceptReviewItem, dismissReviewItem, getLetterById, getReviewItemById, listReviewQueue, updateLetter } from "../db";
+import {
+  acceptReviewItem,
+  deleteLetter,
+  dismissReviewItem,
+  getLetterById,
+  getReviewItemById,
+  listReviewQueue,
+  updateLetter,
+} from "../db";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -70,6 +78,17 @@ app.put("/letters/:id", async (c) => {
   const letter = await getLetterById(c.env.DB, id);
   if (!letter) return c.json({ error: "Not found" }, 404);
   return c.json({ letter });
+});
+
+// Removes a same-day duplicate that should have been merged (CLAUDE.md's
+// Functionality spec names this by name) — the only write path that permits
+// it is here, so a two-step confirm in the UI is the only real safeguard.
+app.delete("/letters/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const letter = await getLetterById(c.env.DB, id);
+  if (!letter) return c.json({ error: "Not found" }, 404);
+  await deleteLetter(c.env.DB, id);
+  return c.json({ ok: true });
 });
 
 export default app;

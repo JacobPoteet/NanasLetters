@@ -304,6 +304,16 @@ export async function updateLetter(
     .run();
 }
 
+/**
+ * Removes a letter (e.g. a same-day duplicate that should have been merged —
+ * see CLAUDE.md's parsing findings). `letter_photos` cascades via the FK,
+ * and `letters_fts` stays in sync via the `letters_ad` trigger (see
+ * migrations/0001_init.sql) — nothing else needs to know about this delete.
+ */
+export async function deleteLetter(db: D1Database, id: number): Promise<void> {
+  await db.prepare("DELETE FROM letters WHERE id = ?1").bind(id).run();
+}
+
 export async function getReviewItemById(db: D1Database, id: number): Promise<ReviewQueueItem | null> {
   const row = await db
     .prepare("SELECT id, gmail_message_id, reason, received_date, raw_text, status FROM review_queue WHERE id = ?1")

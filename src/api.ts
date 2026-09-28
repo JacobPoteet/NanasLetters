@@ -34,6 +34,7 @@ export const api = {
     fields: { date?: string; text?: string; meditationTitle?: string | null; meditationUrl?: string | null },
   ) =>
     request<{ letter: Letter }>(`/admin/letters/${id}`, { method: "PUT", body: JSON.stringify(fields) }),
+  deleteLetter: (id: number) => request<{ ok: true }>(`/admin/letters/${id}`, { method: "DELETE" }),
   search: (q: string, from?: string, to?: string) => {
     const query = new URLSearchParams({ q });
     if (from) query.set("from", from);
