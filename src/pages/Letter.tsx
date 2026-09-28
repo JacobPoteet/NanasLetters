@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Letter, Role } from "../../shared/types";
+import { paragraphsWithHighlight } from "../../shared/letterHighlight";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
@@ -29,6 +30,8 @@ function backToSearch(search: string): { to: string; label: string } | null {
 export function LetterPage({ id, role, search }: { id: number; role: Role; search: string }) {
   const [data, setData] = useState<{ letter: Letter; prevId: number | null; nextId: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const highlightRef = useRef<HTMLParagraphElement | null>(null);
+  const highlight = new URLSearchParams(search).get("highlight");
 
   useEffect(() => {
     setData(null);
@@ -39,11 +42,20 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
     trackVisit("letter", id);
   }, [id]);
 
+  // Land the family member back on the exact spot they searched their way
+  // to, once the letter (and the paragraph carrying it) has actually
+  // rendered — see issue #20.
+  useEffect(() => {
+    if (!data || !highlight) return;
+    highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [data, highlight]);
+
   if (error) return <div className="content error-text">{error}</div>;
   if (!data) return <div className="content">Loading…</div>;
 
   const { letter, prevId, nextId } = data;
   const back = backToSearch(search);
+  const paragraphs = paragraphsWithHighlight(letter.text, highlight);
 
   return (
     <div className="content content--narrow">
@@ -62,7 +74,17 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
       </div>
 
       <div className="letter-body">
-        {letter.text.split("\n").map((paragraph, i) => (paragraph.trim() ? <p key={i}>{paragraph}</p> : null))}
+        {paragraphs.map((p, i) =>
+          p.highlightStart !== null && p.highlightEnd !== null ? (
+            <p key={i} ref={highlightRef}>
+              {p.text.slice(0, p.highlightStart)}
+              <mark className="letter-highlight">{p.text.slice(p.highlightStart, p.highlightEnd)}</mark>
+              {p.text.slice(p.highlightEnd)}
+            </p>
+          ) : (
+            <p key={i}>{p.text}</p>
+          ),
+        )}
       </div>
 
       {letter.photos.length > 0 && (

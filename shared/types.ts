@@ -41,6 +41,8 @@ export interface SearchResult {
   date: string;
   /** FTS5 snippet() output — already contains <mark> around matched terms. */
   snippetHtml: string;
+  /** The exact, unmarked substring of the letter's own text behind snippetHtml — undefined for a date-only search with no real match. Used to highlight the same spot in the letter view (issue #20). */
+  matchText?: string;
 }
 
 /** "relevance" only means anything alongside a text query — see searchLetters in worker/db.ts. */
