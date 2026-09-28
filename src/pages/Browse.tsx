@@ -110,7 +110,16 @@ export function BrowsePage() {
       )}
 
       <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
-        <CalendarPicker mode="single" from={jumpDate} to={null} onChange={(r) => handleJump(r.from)} placeholder="Jump to a date" />
+        <CalendarPicker
+          mode="single"
+          from={jumpDate}
+          to={null}
+          onChange={(r) => handleJump(r.from)}
+          placeholder="Jump to a date"
+          focusDate={selectedYear !== null ? `${selectedYear}-01-01` : null}
+          archiveStart={stats?.firstDate}
+          archiveEnd={stats?.lastDate}
+        />
         {(jumpDate || selectedYear !== null) && (
           <button
             onClick={() => handleJump(null)}
