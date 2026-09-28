@@ -74,6 +74,16 @@ export interface MostReadLetter {
   reads: number;
 }
 
+/** The whole archive's shape in one payload — the admin calendar view (GitHub #3). */
+export interface AdminCalendarSummary {
+  archiveStart: string; // YYYY-MM-DD, MIN(date) across all letters
+  today: string; // server's current date, so the client can tell a real gap from "hasn't happened yet"
+  /** date -> letter ids on it. Usually 0 or 1 entries; a length >= 2 is a pip day. */
+  lettersByDate: Record<string, number[]>;
+  /** Dates with at least one pending review-queue item — the amber overlay. */
+  pendingReviewDates: string[];
+}
+
 /** Anonymous, operational-visibility-only usage summary (GitHub #8) — no per-person tracking. */
 export interface AnalyticsSummary {
   windowDays: number;

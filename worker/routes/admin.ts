@@ -8,6 +8,7 @@ import {
   deleteLetter,
   dismissReviewItem,
   getAnalyticsSummary,
+  getCalendarSummary,
   getLetterById,
   getReviewItemById,
   listReviewQueue,
@@ -18,6 +19,10 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.get("/analytics", async (c) => {
   return c.json(await getAnalyticsSummary(c.env.DB));
+});
+
+app.get("/calendar", async (c) => {
+  return c.json(await getCalendarSummary(c.env.DB));
 });
 
 app.get("/review-queue", async (c) => {

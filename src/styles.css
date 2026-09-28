@@ -289,6 +289,121 @@ button {
   padding: 24px 0;
 }
 
+/* The custom calendar/date picker (Search, Browse) — a real popover built
+   in "Morning Paper" instead of a native <input type="date">, whose popup
+   is rendered by the browser/OS and cannot be restyled. */
+.calendar-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.calendar-picker__trigger {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.calendar-picker__trigger:hover {
+  border-color: var(--accent);
+}
+
+.calendar-picker__popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(43, 36, 28, 0.14);
+  padding: 16px;
+  width: min(280px, calc(100vw - 40px));
+}
+
+.calendar-picker__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.calendar-picker__nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink-muted);
+  padding: 4px 8px;
+}
+
+.calendar-picker__nav button:hover {
+  color: var(--accent);
+}
+
+.calendar-picker__cell {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.calendar-picker__cell:hover {
+  background: var(--photo-placeholder);
+}
+
+.calendar-picker__cell--empty {
+  cursor: default;
+}
+
+.calendar-picker__cell--selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.calendar-picker__cell--in-range {
+  background: rgba(176, 82, 45, 0.14);
+  border-radius: 0;
+}
+
+.calendar-picker__cell--today:not(.calendar-picker__cell--selected) {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.calendar-picker__footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-picker__footer button {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-link);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
 /* Phone/narrow-tablet breakpoint for the five family-facing pages (Home,
    Browse, Letter, Search, Login) — the admin screens are exempt from the
    design bar (CLAUDE.md's UI/layout decision) so they're untouched here. */

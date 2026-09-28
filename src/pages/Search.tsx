@@ -3,11 +3,12 @@ import type { SearchResult } from "../../shared/types";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
+import { CalendarPicker } from "../components/calendar/CalendarPicker";
 
 export function SearchPage() {
   const [query, setQuery] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState<string | null>(null);
+  const [to, setTo] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export function SearchPage() {
     e.preventDefault();
     setError(null);
     try {
-      const r = await api.search(query, from || undefined, to || undefined);
+      const r = await api.search(query, from ?? undefined, to ?? undefined);
       setResults(r.results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -43,14 +44,17 @@ export function SearchPage() {
         />
         <button type="submit">Search</button>
       </form>
-      <div style={{ display: "flex", gap: 12, marginTop: 12, alignItems: "center", fontSize: 13, color: "var(--ink-muted)" }}>
-        <label>
-          From{" "}
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ marginLeft: 4 }} />
-        </label>
-        <label>
-          To <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ marginLeft: 4 }} />
-        </label>
+      <div style={{ marginTop: 12 }}>
+        <CalendarPicker
+          mode="range"
+          from={from}
+          to={to}
+          onChange={(r) => {
+            setFrom(r.from);
+            setTo(r.to);
+          }}
+          placeholder="Any date"
+        />
       </div>
 
       {error && <div className="error-text" style={{ marginTop: 16 }}>{error}</div>}

@@ -12,6 +12,7 @@ import { AdminPage } from "./pages/Admin";
 import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
 import { AdminAnalyticsPage } from "./pages/AdminAnalytics";
+import { AdminCalendarPage } from "./pages/AdminCalendar";
 import { AdminShell } from "./components/AdminNav";
 
 function matchId(pattern: RegExp, path: string): number | null {
@@ -38,6 +39,7 @@ export function App() {
   const adminEditId = role === "admin" ? matchId(/^\/admin\/letters\/(\d+)$/, path) : null;
   const isAdminBrowse = role === "admin" && path === "/admin/browse";
   const isAdminAnalytics = role === "admin" && path === "/admin/analytics";
+  const isAdminCalendar = role === "admin" && path === "/admin/calendar";
   const isAdminReview = role === "admin" && path === "/admin";
 
   return (
@@ -54,6 +56,10 @@ export function App() {
       ) : isAdminAnalytics ? (
         <AdminShell>
           <AdminAnalyticsPage />
+        </AdminShell>
+      ) : isAdminCalendar ? (
+        <AdminShell>
+          <AdminCalendarPage />
         </AdminShell>
       ) : isAdminReview ? (
         <AdminShell>

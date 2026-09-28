@@ -1,4 +1,5 @@
 import type {
+  AdminCalendarSummary,
   AnalyticsDay,
   AnalyticsPage,
   AnalyticsSummary,
@@ -445,5 +446,29 @@ export async function getAnalyticsSummary(db: D1Database): Promise<AnalyticsSumm
     newDevicesToday: newToday?.c ?? 0,
     daily: daily.results ?? [],
     mostRead,
+  };
+}
+
+// --- Admin calendar (GitHub #3) ---
+
+export async function getCalendarSummary(db: D1Database): Promise<AdminCalendarSummary> {
+  const [letterRows, reviewRows, span] = await Promise.all([
+    db.prepare("SELECT date, id FROM letters ORDER BY date").all<{ date: string; id: number }>(),
+    db
+      .prepare("SELECT DISTINCT received_date FROM review_queue WHERE status = 'pending'")
+      .all<{ received_date: string }>(),
+    db.prepare("SELECT min(date) as archiveStart FROM letters").first<{ archiveStart: string | null }>(),
+  ]);
+
+  const lettersByDate: Record<string, number[]> = {};
+  for (const row of letterRows.results ?? []) {
+    (lettersByDate[row.date] ??= []).push(row.id);
+  }
+
+  return {
+    archiveStart: span?.archiveStart ?? new Date().toISOString().slice(0, 10),
+    today: new Date().toISOString().slice(0, 10),
+    lettersByDate,
+    pendingReviewDates: (reviewRows.results ?? []).map((r) => r.received_date),
   };
 }

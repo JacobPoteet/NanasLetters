@@ -1,4 +1,12 @@
-import type { AnalyticsSummary, Letter, OnThisDayResult, LetterSummary, Role, SearchResult } from "../shared/types";
+import type {
+  AdminCalendarSummary,
+  AnalyticsSummary,
+  Letter,
+  OnThisDayResult,
+  LetterSummary,
+  Role,
+  SearchResult,
+} from "../shared/types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -36,6 +44,7 @@ export const api = {
     request<{ letter: Letter }>(`/admin/letters/${id}`, { method: "PUT", body: JSON.stringify(fields) }),
   deleteLetter: (id: number) => request<{ ok: true }>(`/admin/letters/${id}`, { method: "DELETE" }),
   analyticsSummary: () => request<AnalyticsSummary>("/admin/analytics"),
+  calendarSummary: () => request<AdminCalendarSummary>("/admin/calendar"),
   search: (q: string, from?: string, to?: string) => {
     const query = new URLSearchParams({ q });
     if (from) query.set("from", from);
