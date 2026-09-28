@@ -14,14 +14,14 @@ Nothing below is locked in until noted otherwise. Sections marked **[decided]** 
 
 1. **Parsing experiment** (current phase): pull a sample of letters across different years from Gmail, figure out how to reliably separate Nana's own words from the meditation-email boilerplate/forwarding cruft she's replying inside of, and report conclusions before touching a database schema.
 2. **Functionality** (done — see "Functionality" section below): what the site actually does for a family member — read, search, browse.
-3. **Tech stack**: chosen to serve #2, not assumed up front. Cloudflare + a single Worker is decided (below); everything inside that is not.
+3. **Tech stack** (done — see "Tech stack" section below): chosen to serve #2, not assumed up front.
 4. **UI/layout**: elegant, clean, calming, ethereal, meditative — it should feel like the thing it's archiving, not like an admin dashboard. Welcoming to family members specifically, not a generic "cool site."
 5. **First implementation pass + CI/CD**, mirroring Lunch Special's pipeline shape below.
 
 Open questions, sharper now than "undecided" but not yet **[decided]**:
 
 - **Ingestion, backfill**: confirmed source is Gmail label `Fwd: Richard Rohr Meditation` (label ID `Label_6064425115864008158`) on Jacob's account — 1,927 messages / 1,859 threads as of Sept 2026, not ~2,000 as first guessed. The earliest one under this subject pattern is Feb 6, 2018, not 10 years back — either the habit started later than remembered, or older letters exist under a different subject/label and haven't been located yet. Don't assume the second without checking once backfill actually starts.
-- **Ingestion, ongoing**: she still writes one every morning. Candidates: keep polling Gmail via a scheduled Worker (Cron Trigger) hitting the Gmail API, or switch to Cloudflare Email Routing (a Worker email handler on a dedicated address she's forwarded/CC'd on) so new mail never depends on a Gmail OAuth token staying valid. Decide once the backfill approach is settled — the two don't have to be the same mechanism.
+- **Ingestion, ongoing [decided]**: keep polling Gmail via a Cron Trigger, same code path as backfill. **Cloudflare Email Routing was rejected** — it would require Nana to change a habit she's kept solo for 8+ years (add a new forward/CC target), where continued polling requires zero change from her: Jacob is already on her distribution list, so the letters already land in the mailbox this reads. The tradeoff is a single point of failure (Jacob's Gmail OAuth token), which is why ingestion health monitoring is a real requirement, not polish — see "Tech stack" below.
 - **Auth [decided: two-tier]**: family viewers share one passphrase (Lunch Special's admin-password pattern, ~20 people on Nana's list) — no per-user accounts. **A separate, stronger admin passphrase** gates the editing screen below, since that one can rewrite archive content and shouldn't share a secret that ~20 people know.
 - **What "archive" means [mostly decided]**: a searchable library, not just a chronological feed. Nana explicitly wants (a) full-text search over what the letters actually say, (b) search/filter by date or date range, and (c) an "on this day" surface — showing past letters written on today's month/day across the years. All three need a real per-letter date, stored as structured data, not buried in freeform text. Whether there's *additional* per-letter metadata (occasion, recipients) beyond date is still open, and depends on what's actually in the source emails.
 - **Attachments/images [confirmed]**: some letters carry real photo attachments (a Dec 2023 letter has a 2MB `.jpg` of a family picture referenced in her own text). Object storage (R2) alongside D1 is needed, not a TEXT column — this is no longer speculative.
@@ -52,9 +52,27 @@ Explicit non-goals for v1 — don't build these until asked:
 - No standalone photo gallery — attachments show inline on their own letter only.
 - No per-letter metadata beyond date + meditation title (no "occasion," no recipient list) unless a real need for it shows up.
 
+## Tech stack **[decided]**
+
+One Cloudflare Worker, same shape as Lunch Special, chosen to serve the v1 functionality spec above with as few moving parts (and as few new runtime dependencies) as possible.
+
+- **Frontend**: React + Vite + `@cloudflare/vite-plugin`, served as Workers Static Assets from the same Worker — no separate frontend host, no separate build.
+- **API**: Hono, same as Lunch Special.
+- **Data**: D1. Letters, photos-metadata, ingestion state, and the review queue are relational and small (~1,900 rows today, growing by one a day) — nothing here needs a different database.
+- **Full-text search: D1's built-in FTS5 virtual table**, not a separate search service. An external-content FTS5 table kept in sync via SQLite triggers on the base `letters` table (triggers run inside the same statement, sidestepping D1's lack of cross-statement transactions). `snippet()`/`highlight()` cover the highlighted-search-result requirement in the functionality spec for free.
+- **Photos**: R2, one object per attachment. Served at original size in v1 — see [issue #1](https://github.com/JacobPoteet/NanasLetters/issues/1) for the deferred resize/thumbnail follow-up.
+- **Auth**: signed HMAC session cookies (Lunch Special's pattern), carrying a `role` claim (`family` or `admin`) set by which passphrase was checked at login. Two secrets, not one — see Secrets below.
+- **Ingestion (backfill and ongoing, same code path)**: a Cron Trigger calls the Gmail API directly over `fetch` — no Google API SDK. Auth is a Google OAuth **refresh token, scoped read-only** (`gmail.readonly`), minted once via a one-time interactive consent flow (a bootstrap step, like Lunch Special's `wrangler secret put` bootstrap) and exchanged for short-lived access tokens at runtime via a plain `fetch` to `oauth2.googleapis.com`. The backfill is the same cron logic run once against the full label history rather than a separate one-off importer, so there's only ever one parsing code path to trust.
+- **Parsing** (`extractLetter`, a pure fold with fixtures from the real samples pulled during the parsing experiment): prefer a message's genuine `text/plain` MIME part when one exists (the 2018-era shape); otherwise take the HTML body and run it through the Worker's built-in **`HTMLRewriter`** to strip `<style>`/`<script>` node contents before converting to text — no HTML-to-text npm dependency needed. Then locate the first quoted/forwarded block via a small, growable list of known marker patterns and keep only what's above it.
+- **Ingestion health monitoring**: since ongoing ingestion depends on one Gmail OAuth token staying valid forever, the Cron Trigger's failure state can't just fail silently — an alert (at minimum, an email to Jacob) is needed if a run errors, or if no new letter has appeared for several days running. This is the same "automated backup is not optional" reasoning as the prod-database section below, applied to ingestion instead of storage.
+- **Runtime dependencies, named** (per the Conventions rule below): `hono`, `react`, `react-dom`. Deliberately not: an HTML-to-text library (HTMLRewriter instead), a full-text search library (D1 FTS5 instead), a Google API client SDK (`fetch` instead), a date library (SQL `strftime` instead).
+- **Tooling**: mirrors Lunch Special exactly — vitest, oxlint, `tsc -b` with the same 3-project split (app/worker/node), for the muscle-memory reason stated in Commands below.
+
+**Deferred work gets a GitHub issue, not just a mental note.** When something is a real, valuable idea but doesn't belong in the current scope (v1, or whatever's being built next), file it on [the repo](https://github.com/JacobPoteet/NanasLetters) with labels (`enhancement`/`bug`/etc. plus `post-v1`, `performance`, `ingestion` as they fit) instead of letting it evaporate or bloating this file. [Issue #1](https://github.com/JacobPoteet/NanasLetters/issues/1) (photo resizing) is the first example.
+
 ## Commands **[decided: shape, not final names]**
 
-The exact scripts depend on the stack chosen below, but every one of these must exist under these names once the stack is real, mirroring Lunch Special so the muscle memory transfers:
+Every one of these must exist under these names once implementation starts, mirroring Lunch Special so the muscle memory transfers. `dev`/`build`/`deploy` run through the Vite + `@cloudflare/vite-plugin` toolchain named in "Tech stack" above; the rest are plain `wrangler`/`vitest`/`oxlint` invocations:
 
 ```bash
 npm run dev          # local dev server, hot-reloading
@@ -101,7 +119,7 @@ Four rules, carried over from Lunch Special because they were each learned the h
 
 ### Secrets
 
-- **Application secrets** (session secret, any shared family passphrase, third-party API keys) live in the platform's secret store (`wrangler secret put` or equivalent) and persist across deploys — CI never touches them, never prints them, never has them in an env file that gets committed.
+- **Application secrets**: `SESSION_SECRET`, `FAMILY_PASSPHRASE`, `ADMIN_PASSPHRASE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (the Gmail read-only OAuth token, minted once via a one-time consent flow — the actual bootstrap steps belong in a "Deploy to Cloudflare" section once there's a live environment to bootstrap). All live in the platform's secret store (`wrangler secret put`) and persist across deploys — CI never touches them, never prints them, never has them in an env file that gets committed.
 - **CI credentials** (deploy token, account ID) live only as GitHub Actions secrets.
 - A resource ID that identifies an account or database but grants no access on its own (a D1 database UUID, a Cloudflare account ID) is not a secret and can live in a committed config file — same reasoning Lunch Special uses for its `database_id` and `GITHUB_REPO`. Don't over-classify; don't under-classify either — when unsure, treat it as a secret.
 
@@ -109,17 +127,23 @@ Four rules, carried over from Lunch Special because they were each learned the h
 
 Changing `ci.yml`, `deploy.yml`, or anything migrations/secrets-related is riskier than changing application code, because a broken pipeline can fail silently (a required check that never runs, a deploy that "succeeds" against the wrong environment). Any such change gets a deliberate second look before merge — read the diff of the workflow file itself, not just the app code around it, and confirm what would happen on the next real tag push, not just the next PR.
 
-## Layout **[placeholder — fill in once the stack is chosen]**
+## Layout **[decided]**
 
-Whatever the stack turns out to be, keep the separation that made Lunch Special's codebase easy to reason about:
+Mirrors Lunch Special's split, which is what made that codebase easy to reason about:
+
+- `worker/` — Hono routes, the Cron Trigger's ingestion handler, and every pure fold (`extractLetter`, the forward-marker splitter, session token verify) with its test beside it.
+- `shared/` — types imported by both `worker/` and the frontend, so the API and the UI can't silently drift.
+- `src/` — the React app.
+- `migrations/` — additive-only D1 schema changes (see "The prod database is the only copy that matters").
+- `seed/` — local-only dev fixture letters (a handful of representative samples across the format eras found in the parsing experiment), never real letters.
 
 - **Pure logic lives apart from routes/handlers, and every pure fold has a unit test beside it.** Query/receive in the handler, fold in a plain function, assert on the fold. This is what makes `npm test` meaningful and keeps the handler layer thin enough that most bugs never reach it.
-- **Shared types live in one place**, imported by both server and client code, so the two sides of the API can't silently drift.
-- **One clear rule for what's client-visible vs. server-only**, decided once and enforced by the type boundary (e.g. worker code with no DOM lib, app code with DOM) rather than by convention alone.
+- **One clear rule for what's client-visible vs. server-only**: `worker/` gets no DOM lib, `src/` gets DOM, enforced by the tsconfig project split, not by convention alone.
 
 ## Conventions
 
-- Don't add a dependency casually. Justify it the way Lunch Special does — name the runtime deps in this file once the stack is chosen, and treat any addition as a decision worth a sentence here.
+- Don't add a dependency casually. Runtime deps are named in "Tech stack" above (`hono`, `react`, `react-dom`, and nothing else) — treat any addition as a decision worth a sentence there.
+- Something worth doing but out of current scope gets a GitHub issue (see "Tech stack" above), not a comment, a TODO, or a note that only lives in someone's memory of this conversation.
 - `tsc -b` (or whatever the typecheck command is) can report stale success on an incremental build graph if the underlying tool supports incremental builds — know the force/clean flag for "I changed a shared type and don't trust the cache" before it costs you a debugging session.
 - No emoji, no filler comments. Comments explain *why*, never *what* — see the root guidance this file inherits from the harness for the full rule.
 
