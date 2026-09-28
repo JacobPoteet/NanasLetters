@@ -107,39 +107,38 @@ Do not let `npm test` silently mean "the fast subset." One command, no flags, ru
 
 ## Implementation status
 
-The first pass exists and is real, not scaffolding-only: `npm test && npm run check && npm run lint && npm run build` all pass, and every page in the Functionality spec has been exercised by hand in a browser — first against seeded fixture data, then again against the **real, complete backfill** (2,851 real letters applied to local D1: on-this-day, browse, search, and the letter view with a real resolved cac.org link all confirmed working at real scale, not just the 7-row seed set). What's still open before this is a finished v1, not a proof of concept:
+**v1.0.0 is tagged and live**: `npm test && npm run check && npm run lint && npm run build` all pass, the Worker is deployed at https://nanas-letters.jacobwilliampoteet.workers.dev, and the real, complete backfill (2,851 letters, spanning 2018-02-06 to 2026-09-27) is applied to **prod** D1, not just local — on-this-day, browse, search, and the letter view all confirmed working against it at real scale. A tag push (`v*`) re-runs test + check + remote migrate + deploy through `deploy.yml`, not just a local `npm run deploy`, so the pipeline itself — not just the app — has been exercised for a real release.
 
-- **Backfill data exists locally but hasn't been applied to prod D1 yet.** `backfill/import.sql` (gitignored, real letter text) is generated and verified against local D1; running it against `--remote` is a real, deliberate action someone should confirm before it happens, not something to do automatically. The 91 items in the review queue are worth a look before or after — mostly genuine oddities (an ambiguous same-day resend, a forward with no recognizable marker), not systematic parsing failures.
-- **Not deployed yet.** No `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` GitHub Actions secrets, no Worker secrets set via `wrangler secret put` — see "Deploy to Cloudflare" below for the real bootstrap checklist.
-- **R2 bucket doesn't exist remotely.** `wrangler r2 bucket create` refused with "Please enable R2 through the Cloudflare Dashboard" (code 10042) — a one-time dashboard action only Jacob can do. The binding is already in `wrangler.jsonc` and works locally; only `wrangler deploy` needs the real bucket.
+What's still open, now tracked as milestone 1.1.0:
+
 - **Ongoing ingestion is on hold, deliberately** (Jacob's call). `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REFRESH_TOKEN` remain unset; the live Gmail-API code path (list → fetch → parse → resolve meditation link → dedupe/review-queue) is written and unit-tested down to the pure folds, just never run against the live API, and the site currently has no automatic way to receive a letter Nana sends tomorrow.
-- **Real alerting on ingestion failure** is [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2) — currently just `console.error`.
+- **Real alerting on ingestion failure** (and now backup failure too) is [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2) — currently just `console.error` for both.
+- The review queue's 91 items are processable now (see #11 below) but not yet gone through by hand.
 
 ### What's next — milestone 1.1.0
 
-Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/milestone/1](https://github.com/JacobPoteet/NanasLetters/milestone/1). This list exists so a fresh session can pick up the plan without re-deriving it:
+Everything below is filed and tracked: [github.com/JacobPoteet/NanasLetters/milestone/1](https://github.com/JacobPoteet/NanasLetters/milestone/1). This list exists so a fresh session can pick up the plan without re-deriving it. Done since v1.0.0: [#4](https://github.com/JacobPoteet/NanasLetters/issues/4) (deploy), [#5](https://github.com/JacobPoteet/NanasLetters/issues/5) (backfill to prod), [#11](https://github.com/JacobPoteet/NanasLetters/issues/11) (review-queue accept actually creates a letter), [#9](https://github.com/JacobPoteet/NanasLetters/issues/9) (automated D1→R2 backup).
 
-- [#4](https://github.com/JacobPoteet/NanasLetters/issues/4) — deploy the Worker to Cloudflare for the first time. Nothing but the D1 database exists on the account right now.
-- [#5](https://github.com/JacobPoteet/NanasLetters/issues/5) — apply the verified backfill (2,851 letters) to prod D1. Deliberately not automatic — a real one-time action to confirm before running.
 - [#6](https://github.com/JacobPoteet/NanasLetters/issues/6) — decide and implement ongoing ingestion (Gmail OAuth polling vs. Cloudflare Email Routing), currently on hold.
-- [#2](https://github.com/JacobPoteet/NanasLetters/issues/2) — real ingestion-failure alerting.
+- [#2](https://github.com/JacobPoteet/NanasLetters/issues/2) — real ingestion/backup-failure alerting.
 - [#3](https://github.com/JacobPoteet/NanasLetters/issues/3) — admin: yearly calendar view (entry counts per day, red/green, pips for multiples).
 - [#7](https://github.com/JacobPoteet/NanasLetters/issues/7) — admin: a real nav shell + browse/search to find any of the ~2,850 letters to edit (today the edit form is only reachable from a letter you already found via the family-facing pages).
 - [#8](https://github.com/JacobPoteet/NanasLetters/issues/8) — admin: basic usage analytics (visits, letters read, device counts), mirroring Lunch Special's `analytics_visits`/`analytics_rounds` pattern — anonymous, operational visibility only ("is this working, roughly what scale"), explicitly not engagement optimization or per-person tracking.
+- [#10](https://github.com/JacobPoteet/NanasLetters/issues/10) — decide and document letter retention policy.
+- [#12](https://github.com/JacobPoteet/NanasLetters/issues/12) — admin: delete/merge a duplicate letter.
+- [#13](https://github.com/JacobPoteet/NanasLetters/issues/13) — family-facing pages have no responsive/mobile layout.
 
-## Deploy to Cloudflare **[bootstrap steps, not yet performed]**
+## Deploy to Cloudflare **[done — kept here as the record of what was bootstrapped]**
 
-Backfill no longer needs any of this — `npm run db:migrate:remote` then `npx wrangler d1 execute nanas-letters-db --remote --file=backfill/import.sql` (generated by `scripts/import-mbox.ts`) is enough to populate prod with the real archive, independent of the Worker being deployed at all.
+D1 is bootstrapped: `nanas-letters-db` exists (`eb455876-47d8-41d6-bf7d-5cc77568cc36`, committed in `wrangler.jsonc` since a database ID identifies but doesn't grant access — see Secrets below), migrations and the full backfill are applied to prod.
 
-The rest, one-time, for when the site actually needs to go live and/or receive new letters automatically:
+R2 is enabled account-wide and both buckets exist: `nanas-letters-photos` (attachments) and `nanas-letters-backups` (the automated backup below) — a second bucket, not a key prefix inside the photos one, so a runaway backup job can never collide with or overwrite a real attachment.
 
-1. R2: enable it via the Cloudflare dashboard (one click, account-level), then `npx wrangler r2 bucket create nanas-letters-photos`.
-2. Gmail (**only needed for ongoing ingestion, currently on hold — not backfill**): create a Google Cloud project, enable the Gmail API, create an OAuth client (Desktop app type), and run the one-time interactive consent flow scoped to `gmail.readonly` to mint a refresh token.
-3. `npx wrangler secret put SESSION_SECRET`, `FAMILY_PASSPHRASE`, `ADMIN_PASSPHRASE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` — interactive, run in your own terminal, never in CI. The three `GOOGLE_*` ones can wait until step 2 is actually done.
-4. GitHub Actions secrets: `CLOUDFLARE_API_TOKEN` (Workers + D1 + R2 edit scopes), `CLOUDFLARE_ACCOUNT_ID` (`9016037cfaa0836d9bbc85d754935cb5` — not a secret in the sense of needing hiding, but it lives as an Actions secret alongside the token for convenience).
-5. `npm run deploy`, then verify: log in with the family passphrase, confirm the on-this-day page loads.
+`SESSION_SECRET`, `FAMILY_PASSPHRASE`, `ADMIN_PASSPHRASE` are set via `wrangler secret put` (never in CI). `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REFRESH_TOKEN` remain unset — only needed once ongoing ingestion (#6) is decided.
 
-D1 is already bootstrapped: `nanas-letters-db` exists (`eb455876-47d8-41d6-bf7d-5cc77568cc36`, committed in `wrangler.jsonc` since a database ID identifies but doesn't grant access — see Secrets below), and `npm run db:migrate:remote` is safe to run any time (additive, idempotent).
+GitHub Actions secrets are set: `CLOUDFLARE_API_TOKEN` (Workers + D1 + R2 edit scopes), `CLOUDFLARE_ACCOUNT_ID` (`9016037cfaa0836d9bbc85d754935cb5` — not a secret in the sense of needing hiding, but it lives as an Actions secret alongside the token for convenience).
+
+The site is live at the `*.workers.dev` URL; no custom domain has been pointed at it yet.
 
 ## The prod database is the only copy that matters
 
@@ -148,7 +147,7 @@ This is the one place Nana's Letters is *more* strict than Lunch Special, not le
 Consequences that are non-negotiable once the DB exists:
 
 1. **`db:seed` must never be runnable against prod**, and ideally shouldn't even accept a `--remote` flag the way Lunch Special's does — the blast radius of a fat-fingered seed here is categorically worse than replacing a dish schedule.
-2. **A scheduled, automated backup is not optional polish — build it early.** A Cron Trigger that exports D1 (or replicates new rows) to R2 on a schedule, not just a manual `db:export:remote` someone has to remember to run before "risky" work. Manual export is a good pre-migration habit; it is not a backup strategy for irreplaceable data.
+2. **A scheduled, automated backup is not optional polish — build it early. [done]** A second Cron Trigger (`worker/backup.ts`, `0 14 * * *` — 43 minutes after ingestion's, see `wrangler.jsonc`) dumps every table to a plain-INSERT SQL file and writes it to the dedicated `nanas-letters-backups` R2 bucket daily, distinguished from the ingestion cron by `event.cron` in `worker/index.ts`'s `scheduled` handler. `npm run db:export:remote` (`scripts/db-export.mjs`) remains the manual, human-triggered pre-migration habit — it is not the backup strategy itself, the Cron Trigger is. A failed backup run currently only `console.error`s, same stopgap as ingestion — see [issue #2](https://github.com/JacobPoteet/NanasLetters/issues/2).
 3. **Migrations are additive only, forever.** Never a migration that drops or rewrites a column holding letter content without a verified export first.
 4. Decide and document the retention story explicitly: does *everything* Nana ever sends get kept forever? Almost certainly yes — but write that down here once it's confirmed, so a future cleanup script doesn't "helpfully" prune old rows.
 

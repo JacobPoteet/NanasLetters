@@ -17,13 +17,21 @@
     }
   ],
   // R2 enabled on the account and nanas-letters-photos created (see #4 —
-  // deploy bootstrap checklist in CLAUDE.md).
-  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "nanas-letters-photos" }],
+  // deploy bootstrap checklist in CLAUDE.md). nanas-letters-backups is a
+  // separate bucket, not a key prefix inside the photos one, so a runaway
+  // backup job can never collide with or overwrite a real attachment.
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "nanas-letters-photos" },
+    { "binding": "BACKUPS", "bucket_name": "nanas-letters-backups" }
+  ],
   "triggers": {
-    // Once daily is enough for a habit that posts one letter each morning; see
-    // CLAUDE.md's ingestion health monitoring note for what happens if a run
-    // fails or finds nothing for several days running.
-    "crons": ["17 13 * * *"]
+    // Ingestion first, then backup 43 minutes later so the day's new letter
+    // (if ingestion is ever turned back on) is covered by the same backup —
+    // see worker/index.ts's scheduled handler for how these two crons are
+    // told apart (event.cron), and worker/backup.ts for what the second one
+    // does. CLAUDE.md's "prod database is the only copy that matters"
+    // section treats this as non-negotiable, not optional polish.
+    "crons": ["17 13 * * *", "0 14 * * *"]
   },
   "observability": {
     "enabled": true

@@ -11,6 +11,12 @@ import authRoutes, { requireRole } from "./routes/auth";
 import lettersRoutes from "./routes/letters";
 import adminRoutes from "./routes/admin";
 import { runIngestion } from "./ingestion/sync";
+import { runBackup } from "./backup";
+
+// Must match wrangler.jsonc's triggers.crons exactly — that's the only place
+// these schedules are configured, so the scheduled handler below tells the
+// two crons apart by comparing against these literals.
+const BACKUP_CRON = "0 14 * * *";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -32,7 +38,24 @@ export default {
   fetch: app.fetch,
   // Daily Cron Trigger (see wrangler.jsonc) — backfill and ongoing ingestion
   // share this one handler (CLAUDE.md's Tech stack decision).
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    if (event.cron === BACKUP_CRON) {
+      ctx.waitUntil(
+        runBackup(env)
+          .then((result) => {
+            console.log(JSON.stringify({ message: "backup complete", ...result }));
+          })
+          .catch((err) => {
+            // Same reasoning as ingestion's failure log below: a silently
+            // failing backup is as bad as no backup at all. console.error is
+            // a stopgap, not the fix — tracked as
+            // https://github.com/JacobPoteet/NanasLetters/issues/2.
+            console.error(JSON.stringify({ message: "backup run FAILED", error: String(err) }));
+          }),
+      );
+      return;
+    }
+
     ctx.waitUntil(
       runIngestion(env)
         .then((result) => {
