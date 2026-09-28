@@ -14,7 +14,19 @@ function formatWeekday(iso: string): string {
   return date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
 }
 
-export function LetterPage({ id, role }: { id: number; role: Role }) {
+// Search results link here with ?from=/search?... (see SearchPage) so the
+// letter view's back link returns to those exact results instead of always
+// going to Home — see issue #17. Only ever a same-origin /search path is
+// accepted, never an arbitrary redirect target.
+function backToSearch(search: string): { to: string; label: string } | null {
+  const from = new URLSearchParams(search).get("from");
+  if (from && /^\/search(?:\?.*)?$/.test(from)) {
+    return { to: from, label: "← Back to search results" };
+  }
+  return null;
+}
+
+export function LetterPage({ id, role, search }: { id: number; role: Role; search: string }) {
   const [data, setData] = useState<{ letter: Letter; prevId: number | null; nextId: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,11 +43,12 @@ export function LetterPage({ id, role }: { id: number; role: Role }) {
   if (!data) return <div className="content">Loading…</div>;
 
   const { letter, prevId, nextId } = data;
+  const back = backToSearch(search);
 
   return (
     <div className="content content--narrow">
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <Link to="/">← On this day</Link>
+        <Link to={back?.to ?? "/"}>{back?.label ?? "← On this day"}</Link>
         {role === "admin" && <Link to={`/admin/letters/${id}`}>Edit</Link>}
       </div>
 
