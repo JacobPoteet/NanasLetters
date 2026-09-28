@@ -25,9 +25,22 @@ export interface SyncResult {
   inserted: number;
   flaggedForReview: number;
   skippedDuplicates: number;
+  /** True when ingestion didn't run at all because it's not configured yet. */
+  skipped?: boolean;
 }
 
+const EMPTY_RESULT: SyncResult = { processed: 0, inserted: 0, flaggedForReview: 0, skippedDuplicates: 0 };
+
 export async function runIngestion(env: Env): Promise<SyncResult> {
+  // Ongoing ingestion is deliberately on hold (see CLAUDE.md's #6) until a
+  // Gmail OAuth refresh token is minted. Without this, every daily run would
+  // otherwise hit Google's token endpoint with empty credentials and throw
+  // -- a misleading "ingestion run FAILED" every night for a known,
+  // intentional state, not an actual incident.
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REFRESH_TOKEN) {
+    return { ...EMPTY_RESULT, skipped: true };
+  }
+
   const accessToken = await getAccessToken(env);
   const cursor = await getIngestionState(env.DB, CURSOR_KEY);
   // One day of overlap on every run: cheap, and letterExists() below makes

@@ -59,7 +59,9 @@ export default {
     ctx.waitUntil(
       runIngestion(env)
         .then((result) => {
-          console.log(JSON.stringify({ message: "ingestion run complete", ...result }));
+          console.log(
+            JSON.stringify({ message: result.skipped ? "ingestion skipped (not configured, see #6)" : "ingestion run complete", ...result }),
+          );
         })
         .catch((err) => {
           // See CLAUDE.md's "Ingestion health monitoring" note: a silent
