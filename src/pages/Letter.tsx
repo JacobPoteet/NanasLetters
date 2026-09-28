@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Letter } from "../../shared/types";
+import type { Letter, Role } from "../../shared/types";
 import { api } from "../api";
 import { Link } from "../router";
 
@@ -13,7 +13,7 @@ function formatWeekday(iso: string): string {
   return date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
 }
 
-export function LetterPage({ id }: { id: number }) {
+export function LetterPage({ id, role }: { id: number; role: Role }) {
   const [data, setData] = useState<{ letter: Letter; prevId: number | null; nextId: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +32,10 @@ export function LetterPage({ id }: { id: number }) {
 
   return (
     <div className="content content--narrow">
-      <Link to="/">← On this day</Link>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <Link to="/">← On this day</Link>
+        {role === "admin" && <Link to={`/admin/letters/${id}`}>Edit</Link>}
+      </div>
 
       <div style={{ marginTop: 22 }}>
         <div className="eyebrow eyebrow--muted" style={{ letterSpacing: 0, textTransform: "none", fontWeight: 400 }}>
@@ -65,7 +68,19 @@ export function LetterPage({ id }: { id: number }) {
       {letter.meditationTitle && (
         <div className="meditation-note">
           <div className="eyebrow eyebrow--muted">That morning's meditation</div>
-          <div className="meditation-note__title">{letter.meditationTitle}</div>
+          {letter.meditationUrl ? (
+            <a
+              className="meditation-note__title"
+              href={letter.meditationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-block" }}
+            >
+              {letter.meditationTitle} — read it on cac.org →
+            </a>
+          ) : (
+            <div className="meditation-note__title">{letter.meditationTitle}</div>
+          )}
         </div>
       )}
 

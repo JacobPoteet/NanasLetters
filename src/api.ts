@@ -29,6 +29,11 @@ export const api = {
     return request<{ letters: LetterSummary[] }>(`/letters?${query}`);
   },
   letter: (id: number) => request<{ letter: Letter; prevId: number | null; nextId: number | null }>(`/letters/${id}`),
+  updateLetter: (
+    id: number,
+    fields: { date?: string; text?: string; meditationTitle?: string | null; meditationUrl?: string | null },
+  ) =>
+    request<{ letter: Letter }>(`/admin/letters/${id}`, { method: "PUT", body: JSON.stringify(fields) }),
   search: (q: string, from?: string, to?: string) => {
     const query = new URLSearchParams({ q });
     if (from) query.set("from", from);

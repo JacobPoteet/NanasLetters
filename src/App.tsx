@@ -9,9 +9,10 @@ import { SearchPage } from "./pages/Search";
 import { LetterPage } from "./pages/Letter";
 import { LoginPage } from "./pages/Login";
 import { AdminPage } from "./pages/Admin";
+import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 
-function matchLetterId(path: string): number | null {
-  const match = /^\/letters\/(\d+)$/.exec(path);
+function matchId(pattern: RegExp, path: string): number | null {
+  const match = pattern.exec(path);
   return match ? Number(match[1]) : null;
 }
 
@@ -30,13 +31,16 @@ export function App() {
 
   if (!role) return <LoginPage onLoggedIn={setRole} />;
 
-  const letterId = matchLetterId(path);
+  const letterId = matchId(/^\/letters\/(\d+)$/, path);
+  const adminEditId = role === "admin" ? matchId(/^\/admin\/letters\/(\d+)$/, path) : null;
 
   return (
     <div className="page">
       <Header role={role} onLoggedOut={() => setRole(null)} />
-      {letterId !== null ? (
-        <LetterPage id={letterId} />
+      {adminEditId !== null ? (
+        <AdminEditLetterPage id={adminEditId} />
+      ) : letterId !== null ? (
+        <LetterPage id={letterId} role={role} />
       ) : path === "/browse" ? (
         <BrowsePage />
       ) : path === "/search" ? (
