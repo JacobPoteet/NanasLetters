@@ -16,12 +16,8 @@
       "migrations_dir": "migrations"
     }
   ],
-  // The remote bucket doesn't exist yet — R2 needs enabling once via the
-  // Cloudflare dashboard first (`wrangler r2 bucket create` refused with
-  // "Please enable R2 through the Cloudflare Dashboard", code 10042). Kept
-  // active here anyway: local dev/`wrangler types` simulate R2 locally
-  // regardless, so this only actually breaks `wrangler deploy` until someone
-  // enables R2 and runs `wrangler r2 bucket create nanas-letters-photos`.
+  // R2 enabled on the account and nanas-letters-photos created (see #4 —
+  // deploy bootstrap checklist in CLAUDE.md).
   "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "nanas-letters-photos" }],
   "triggers": {
     // Once daily is enough for a habit that posts one letter each morning; see
