@@ -4,6 +4,9 @@
 import { Hono } from "hono";
 import { browseLetters, getAdjacentLetterId, getArchiveStats, getLetterById, getOnThisDay, searchLetters } from "../db";
 import { todayMonthDay } from "../dateWindow";
+import type { SearchSort } from "../../shared/types";
+
+const SEARCH_SORTS: SearchSort[] = ["relevance", "newest", "oldest"];
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -46,7 +49,11 @@ app.get("/search", async (c) => {
   const q = c.req.query("q") ?? "";
   const from = c.req.query("from");
   const to = c.req.query("to");
-  const results = await searchLetters(c.env.DB, q, { from, to });
+  const sortParam = c.req.query("sort");
+  if (sortParam && !SEARCH_SORTS.includes(sortParam as SearchSort)) {
+    return c.json({ error: "Invalid sort" }, 400);
+  }
+  const results = await searchLetters(c.env.DB, q, { from, to, sort: sortParam as SearchSort | undefined });
   return c.json({ results });
 });
 

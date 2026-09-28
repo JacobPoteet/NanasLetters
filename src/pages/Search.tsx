@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
-import type { SearchResult } from "../../shared/types";
+import type { SearchResult, SearchSort } from "../../shared/types";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+function formatResultDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  return `${MONTH_NAMES[month - 1]} ${day}, ${year}`;
+}
+
 export function SearchPage() {
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState<string | null>(null);
   const [to, setTo] = useState<string | null>(null);
+  const [sort, setSort] = useState<SearchSort>("relevance");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -17,8 +28,7 @@ export function SearchPage() {
     trackVisit("search");
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function runSearch(nextSort: SearchSort) {
     setError(null);
     setHint(null);
 
@@ -29,11 +39,21 @@ export function SearchPage() {
     }
 
     try {
-      const r = await api.search(query, from ?? undefined, to ?? undefined);
+      const r = await api.search(query, from ?? undefined, to ?? undefined, nextSort);
       setResults(r.results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await runSearch(sort);
+  }
+
+  async function handleSortChange(nextSort: SearchSort) {
+    setSort(nextSort);
+    if (results !== null) await runSearch(nextSort);
   }
 
   const searchedByDateOnly = !query.trim() && (Boolean(from) || Boolean(to));
@@ -80,14 +100,27 @@ export function SearchPage() {
             </div>
           ) : (
             <>
-              <div className="search-result-count">
-                {searchedByDateOnly
-                  ? `${results.length} letter${results.length === 1 ? "" : "s"} in that range.`
-                  : `${results.length} result${results.length === 1 ? "" : "s"}.`}
+              <div className="search-result-bar">
+                <div className="search-result-count">
+                  {searchedByDateOnly
+                    ? `${results.length} letter${results.length === 1 ? "" : "s"} in that range.`
+                    : `${results.length} result${results.length === 1 ? "" : "s"}.`}
+                </div>
+                <label className="search-sort">
+                  Sort by
+                  <select
+                    value={searchedByDateOnly && sort === "relevance" ? "newest" : sort}
+                    onChange={(e) => handleSortChange(e.target.value as SearchSort)}
+                  >
+                    {!searchedByDateOnly && <option value="relevance">Best match</option>}
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </label>
               </div>
               {results.map((result) => (
                 <div className="letter-card reveal-on-scroll" key={result.id}>
-                  <div className="letter-card__year">{result.date.slice(0, 4)}</div>
+                  <div className="letter-card__date">{formatResultDate(result.date)}</div>
                   <div className="letter-card__body">
                     <div
                       className="letter-card__excerpt search-result"
