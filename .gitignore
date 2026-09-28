@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env
+*.local
+worker-configuration.d.ts
+node_modules/.tmp/
+# D1 dumps from `npm run db:export:remote` — a restore point is a local
+# artifact, not repo content, and it carries real letter text.
+backups/

@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    // Off on purpose, same reasoning as Lunch Special's .oxlintrc.json: pages
+    // like LetterPage reset and refetch their data from an effect when the
+    // route param (the letter id) changes, which is exactly the pattern this
+    // rule flags. The alternative it wants (derive during render, or key the
+    // component) is the bigger change for no bug fixed here.
+    "react/set-state-in-effect": "off"
+  },
+  "ignorePatterns": ["dist/", "node_modules/", "worker-configuration.d.ts"]
+}

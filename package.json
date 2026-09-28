@@ -1,0 +1,42 @@
+{
+  "name": "nanas-letters",
+  "version": "0.1.0",
+  "description": "An archive of Nana's daily letters to the family",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "npm run build && vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "vitest run",
+    "check": "tsc -b",
+    "lint": "oxlint",
+    "cf-typegen": "wrangler types",
+    "db:migrate": "wrangler d1 migrations apply nanas-letters-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply nanas-letters-db --remote",
+    "db:seed": "wrangler d1 execute nanas-letters-db --local --file=seed/seed.sql",
+    "db:export:remote": "node scripts/db-export.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.13.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.57.3",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.85.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.130.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260926.1": true
+  }
+}

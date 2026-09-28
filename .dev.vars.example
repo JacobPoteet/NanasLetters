@@ -1,0 +1,22 @@
+# Copy to .dev.vars for local development (never committed).
+# In production, set these with `wrangler secret put SESSION_SECRET` etc.
+
+# Signs session cookies for both the family and admin logins.
+SESSION_SECRET=any-long-random-string
+
+# Shared by everyone on Nana's list (~20 people) to read the site.
+FAMILY_PASSPHRASE=choose-a-family-passphrase
+
+# A separate, stronger passphrase — gates the letter-editing screen and the
+# ingestion review queue. Deliberately not the same secret as the one above:
+# see CLAUDE.md's Auth decision.
+ADMIN_PASSPHRASE=choose-a-stronger-admin-passphrase
+
+# Gmail API access for ingestion (backfill and the daily Cron Trigger), scoped
+# read-only (gmail.readonly). Minted once via a one-time interactive OAuth
+# consent flow against a Google Cloud project — see CLAUDE.md's ingestion
+# bootstrap notes once that section exists. Leave blank and ingestion simply
+# doesn't run; nothing else in the app needs these.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REFRESH_TOKEN=

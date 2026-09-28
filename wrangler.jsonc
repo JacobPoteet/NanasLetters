@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nanas-letters",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nanas-letters-db",
+      "database_id": "eb455876-47d8-41d6-bf7d-5cc77568cc36",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // The remote bucket doesn't exist yet — R2 needs enabling once via the
+  // Cloudflare dashboard first (`wrangler r2 bucket create` refused with
+  // "Please enable R2 through the Cloudflare Dashboard", code 10042). Kept
+  // active here anyway: local dev/`wrangler types` simulate R2 locally
+  // regardless, so this only actually breaks `wrangler deploy` until someone
+  // enables R2 and runs `wrangler r2 bucket create nanas-letters-photos`.
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "nanas-letters-photos" }],
+  "triggers": {
+    // Once daily is enough for a habit that posts one letter each morning; see
+    // CLAUDE.md's ingestion health monitoring note for what happens if a run
+    // fails or finds nothing for several days running.
+    "crons": ["17 13 * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (set via `wrangler secret put`, never committed) — see .dev.vars.example:
+  //   SESSION_SECRET, FAMILY_PASSPHRASE, ADMIN_PASSPHRASE
+  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
+}
