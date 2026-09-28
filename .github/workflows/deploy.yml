@@ -1,0 +1,47 @@
+name: Deploy to Cloudflare
+
+# Fires on a version tag (git tag v1.0.0 && git push origin v1.0.0) or a
+# manual dispatch from the Actions tab.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # See ci.yml's comment -- same placeholder-from-example approach so a
+      # new secret can't break the typecheck in one workflow and not the other.
+      - run: grep -E '^[A-Z_]+=' .dev.vars.example | sed -E 's/=.*/=placeholder/' > .dev.vars
+      - run: npm run cf-typegen
+
+      # The deploy gate is the last line of defense, not a formality -- it
+      # never trusts that some earlier CI run on some earlier commit passed
+      # (CLAUDE.md's CI/CD section).
+      - run: npm test
+      - run: npm run check
+
+      # Additive and idempotent -- wrangler tracks which migrations already
+      # ran. Never the seed: seed/seed.sql DELETEs and re-inserts fixture
+      # rows, which would erase real letters (CLAUDE.md's db:seed rule).
+      - run: npx wrangler d1 migrations apply nanas-letters-db --remote
+
+      - run: npm run deploy

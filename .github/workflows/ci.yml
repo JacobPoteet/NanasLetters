@@ -1,0 +1,54 @@
+name: CI
+
+# Runs npm test -> npm run check -> npm run lint on every push/PR to main.
+#
+# paths-ignore skips a run when a push/PR touches ONLY inert files (prose --
+# there's no code to test in a README edit). A commit mixing a doc with any
+# other file still runs the full gate -- GitHub skips only when EVERY changed
+# path matches. Must stay identical to codeql.yml's paths-ignore (see
+# CLAUDE.md's CI/CD section -- GitHub Actions has no YAML anchors).
+#
+# NOTE: if this ever becomes a REQUIRED status check, paths-ignore will leave
+# doc-only PRs stuck on "Expected -- waiting for status". The fix then is an
+# always-running gate job, not a special case here.
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # worker-configuration.d.ts (Cloudflare runtime types + Env) is
+      # gitignored and generated, and Env's secret members are derived from
+      # .dev.vars, also gitignored -- so CI needs a placeholder before
+      # typecheck/build. Derived from the committed .dev.vars.example rather
+      # than spelled out here, so a new secret only has to be added in one
+      # place (see CLAUDE.md's CI/CD section).
+      - run: grep -E '^[A-Z_]+=' .dev.vars.example | sed -E 's/=.*/=placeholder/' > .dev.vars
+      - run: npm run cf-typegen
+
+      - run: npm test
+      - run: npm run check
+      - run: npm run lint
