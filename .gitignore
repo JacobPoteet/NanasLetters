@@ -9,3 +9,8 @@ node_modules/.tmp/
 # D1 dumps from `npm run db:export:remote` — a restore point is a local
 # artifact, not repo content, and it carries real letter text.
 backups/
+# The Google Takeout export used for backfill (raw mbox of every real
+# letter) — never committed, especially since this repo is public. See
+# CLAUDE.md's ingestion/backfill section.
+/Mail/
+
