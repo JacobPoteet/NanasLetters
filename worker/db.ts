@@ -14,7 +14,14 @@ import type {
   SearchSort,
 } from "../shared/types";
 import { nearbyMonthDays } from "./dateWindow";
-import { buildFtsQuery, escapeAndMarkSnippet, SNIPPET_MARK_END, SNIPPET_MARK_START } from "./search";
+import {
+  buildFtsQuery,
+  escapeAndMarkSnippet,
+  plainSnippetText,
+  SNIPPET_ELLIPSIS,
+  SNIPPET_MARK_END,
+  SNIPPET_MARK_START,
+} from "./search";
 
 interface LetterRow {
   id: number;
@@ -245,7 +252,7 @@ export async function searchLetters(
   const order = sort === "newest" ? "l.date DESC, l.id DESC" : sort === "oldest" ? "l.date ASC, l.id ASC" : "rank";
   const rows = await db
     .prepare(
-      `SELECT l.id, l.date, snippet(letters_fts, 0, ?${startIdx}, ?${endIdx}, '…', 12) AS snippet
+      `SELECT l.id, l.date, snippet(letters_fts, 0, ?${startIdx}, ?${endIdx}, '${SNIPPET_ELLIPSIS}', 12) AS snippet
        FROM letters_fts
        JOIN letters l ON l.id = letters_fts.rowid
        WHERE ${conditions.join(" AND ")}
@@ -255,7 +262,15 @@ export async function searchLetters(
     .bind(...params)
     .all<SearchRow>();
 
-  return (rows.results ?? []).map((r) => ({ id: r.id, date: r.date, snippetHtml: escapeAndMarkSnippet(r.snippet) }));
+  return (rows.results ?? []).map((r) => ({
+    id: r.id,
+    date: r.date,
+    snippetHtml: escapeAndMarkSnippet(r.snippet),
+    // The plain, un-marked, un-truncated substring behind the highlighted
+    // blurb — the letter view uses this to find and highlight the same spot
+    // in the full letter text when opened from this result — see issue #20.
+    matchText: plainSnippetText(r.snippet),
+  }));
 }
 
 // --- Ingestion writes ---

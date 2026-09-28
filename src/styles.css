@@ -227,6 +227,33 @@ button {
   white-space: pre-wrap;
 }
 
+/* The spot a family member searched their way to (issue #20) — a soft warm
+   wash, not the search page's bold-text mark(), since here it needs to sit
+   quietly in a full paragraph rather than call out a couple of words in a
+   compact blurb. Settles to a faint, permanent tint rather than fading away,
+   since the point is to still be findable on a re-read, not just on arrival. */
+.letter-highlight {
+  background: rgba(176, 82, 45, 0.16);
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .letter-highlight {
+    animation: letter-highlight-in 2.2s ease-out;
+  }
+}
+
+@keyframes letter-highlight-in {
+  from {
+    background: rgba(176, 82, 45, 0.32);
+  }
+  to {
+    background: rgba(176, 82, 45, 0.16);
+  }
+}
+
 .meditation-note {
   margin-top: 44px;
   border-top: 1px solid var(--border);

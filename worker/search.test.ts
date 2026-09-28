@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildFtsQuery, escapeAndMarkSnippet, SNIPPET_MARK_END, SNIPPET_MARK_START } from "./search";
+import {
+  buildFtsQuery,
+  escapeAndMarkSnippet,
+  plainSnippetText,
+  SNIPPET_ELLIPSIS,
+  SNIPPET_MARK_END,
+  SNIPPET_MARK_START,
+} from "./search";
 
 describe("buildFtsQuery", () => {
   it("ANDs together multiple words", () => {
@@ -38,5 +45,33 @@ describe("escapeAndMarkSnippet", () => {
 
   it("escapes a literal ampersand", () => {
     expect(escapeAndMarkSnippet("Church & the choir")).toBe("Church &amp; the choir");
+  });
+});
+
+describe("plainSnippetText", () => {
+  it("strips the mark delimiters, recovering the real text", () => {
+    const raw = `the ${SNIPPET_MARK_START}garden${SNIPPET_MARK_END} was full`;
+    expect(plainSnippetText(raw)).toBe("the garden was full");
+  });
+
+  it("strips a leading ellipsis added when the match isn't at the start", () => {
+    expect(plainSnippetText(`${SNIPPET_ELLIPSIS}the ${SNIPPET_MARK_START}garden${SNIPPET_MARK_END} was full`)).toBe(
+      "the garden was full",
+    );
+  });
+
+  it("strips a trailing ellipsis added when the letter continues past the window", () => {
+    expect(plainSnippetText(`the ${SNIPPET_MARK_START}garden${SNIPPET_MARK_END} was full${SNIPPET_ELLIPSIS}`)).toBe(
+      "the garden was full",
+    );
+  });
+
+  it("strips ellipses on both ends when the match is truncated on both sides", () => {
+    const raw = `${SNIPPET_ELLIPSIS}quiet here today, just birds and the ${SNIPPET_MARK_START}coffee${SNIPPET_MARK_END} pot${SNIPPET_ELLIPSIS}`;
+    expect(plainSnippetText(raw)).toBe("quiet here today, just birds and the coffee pot");
+  });
+
+  it("leaves a snippet with no truncation and no match untouched", () => {
+    expect(plainSnippetText("It is quiet here today")).toBe("It is quiet here today");
   });
 });

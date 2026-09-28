@@ -145,7 +145,10 @@ export function SearchPage({ search }: { search: string }) {
                       dangerouslySetInnerHTML={{ __html: result.snippetHtml }}
                     />
                     <Link
-                      to={`/letters/${result.id}?${new URLSearchParams({ from: `/search${search}` })}`}
+                      to={`/letters/${result.id}?${new URLSearchParams({
+                        from: `/search${search}`,
+                        ...(result.matchText ? { highlight: result.matchText } : {}),
+                      })}`}
                       className="letter-card__link"
                     >
                       Read the letter →
