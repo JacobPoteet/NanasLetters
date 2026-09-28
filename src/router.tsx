@@ -3,6 +3,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
+import { resolveInternalPath } from "../shared/internalPath";
 
 interface RouterState {
   path: string;
@@ -32,12 +33,13 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
+    const safeTo = resolveInternalPath(to, window.location.origin);
     if (options?.replace) {
-      window.history.replaceState(null, "", to);
+      window.history.replaceState(null, "", safeTo);
     } else {
-      window.history.pushState(null, "", to);
+      window.history.pushState(null, "", safeTo);
     }
-    const [newPath, newSearch] = splitPath(to);
+    const [newPath, newSearch] = splitPath(safeTo);
     setPath(newPath);
     setSearch(newSearch);
   }, []);
@@ -53,14 +55,15 @@ export function useRouter(): RouterState {
 
 export function Link({ to, children, className }: { to: string; children: ReactNode; className?: string }) {
   const { navigate } = useRouter();
+  const safeTo = resolveInternalPath(to, window.location.origin);
   return (
     <a
-      href={to}
+      href={safeTo}
       className={className}
       onClick={(e: MouseEvent) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        navigate(to);
+        navigate(safeTo);
       }}
     >
       {children}
