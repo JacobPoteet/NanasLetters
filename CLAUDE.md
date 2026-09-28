@@ -167,6 +167,7 @@ Four rules, carried over from Lunch Special because they were each learned the h
 ### Secrets
 
 - **Application secrets**: `SESSION_SECRET`, `FAMILY_PASSPHRASE`, `ADMIN_PASSPHRASE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (the Gmail read-only OAuth token, minted once via a one-time consent flow — the actual bootstrap steps belong in a "Deploy to Cloudflare" section once there's a live environment to bootstrap). All live in the platform's secret store (`wrangler secret put`) and persist across deploys — CI never touches them, never prints them, never has them in an env file that gets committed.
+- **`DEV_LOGIN_TOKEN` is deliberately not one of the above.** It powers `npm run admin` (a local-dev shortcut that opens a browser straight into a logged-in admin session — see `worker/routes/auth.ts`'s `/dev-login` route) and must never be set with `wrangler secret put` or added as a GitHub Actions secret. Its absence in every real deployment is what makes that route a safe 404 everywhere but a developer's own machine — it belongs only in `.dev.vars`.
 - **CI credentials** (deploy token, account ID) live only as GitHub Actions secrets.
 - A resource ID that identifies an account or database but grants no access on its own (a D1 database UUID, a Cloudflare account ID) is not a secret and can live in a committed config file — same reasoning Lunch Special uses for its `database_id` and `GITHUB_REPO`. Don't over-classify; don't under-classify either — when unsure, treat it as a secret.
 
