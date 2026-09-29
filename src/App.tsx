@@ -14,6 +14,7 @@ import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
 import { AdminAnalyticsPage } from "./pages/AdminAnalytics";
 import { AdminCalendarPage } from "./pages/AdminCalendar";
+import { NotFoundPage } from "./pages/NotFound";
 import { AdminShell } from "./components/AdminNav";
 
 function matchId(pattern: RegExp, path: string): number | null {
@@ -44,6 +45,7 @@ export function App() {
   const isAdminReview = role === "admin" && path === "/admin";
   const isAdminPath = path === "/admin" || path.startsWith("/admin/");
   const needsAdminStepUp = role !== "admin" && isAdminPath;
+  const isKnownAdminRoute = adminEditId !== null || isAdminBrowse || isAdminAnalytics || isAdminCalendar || isAdminReview;
 
   return (
     <div className="page">
@@ -70,14 +72,20 @@ export function App() {
         <AdminShell>
           <AdminPage />
         </AdminShell>
+      ) : isAdminPath && !isKnownAdminRoute ? (
+        <AdminShell>
+          <NotFoundPage />
+        </AdminShell>
       ) : letterId !== null ? (
         <LetterPage id={letterId} role={role} search={search} />
       ) : path === "/browse" ? (
         <BrowsePage />
       ) : path === "/search" ? (
         <SearchPage search={search} />
-      ) : (
+      ) : path === "/" ? (
         <HomePage />
+      ) : (
+        <NotFoundPage />
       )}
     </div>
   );

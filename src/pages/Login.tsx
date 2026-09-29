@@ -1,13 +1,17 @@
 import { useState } from "react";
 import type { Role } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { useRouter } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: (role: Role) => void }) {
   const { navigate } = useRouter();
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useDocumentTitle(pageTitle("Log in"));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

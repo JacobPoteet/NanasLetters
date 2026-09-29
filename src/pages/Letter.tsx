@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Letter, Role } from "../../shared/types";
 import { paragraphsWithHighlight } from "../../shared/letterHighlight";
 import { meditationSearchUrl } from "../../shared/meditationSearchUrl";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 function formatDate(iso: string): string {
   const date = new Date(`${iso}T00:00:00Z`);
@@ -33,6 +35,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
   const [error, setError] = useState<string | null>(null);
   const highlightRef = useRef<HTMLParagraphElement | null>(null);
   const highlight = new URLSearchParams(search).get("highlight");
+
+  useDocumentTitle(pageTitle(data ? formatDate(data.letter.date) : null));
 
   useEffect(() => {
     setData(null);
@@ -92,7 +96,12 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
         <div style={{ marginTop: 32 }}>
           {letter.photos.map((photo) => (
             <div key={photo.id}>
-              <div className="photo-placeholder photo-placeholder--large">photo placeholder</div>
+              <img
+                className="letter-photo"
+                src={`/api/photos/${photo.r2Key}`}
+                alt={photo.caption ?? ""}
+                loading="lazy"
+              />
               {photo.caption && (
                 <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--ink-faint)", marginTop: 10 }}>
                   {photo.caption}

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { ArchiveStats, LetterSummary, OnThisDayResult } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -38,6 +40,8 @@ export function HomePage() {
   const [result, setResult] = useState<OnThisDayResult | null>(null);
   const [stats, setStats] = useState<ArchiveStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(pageTitle());
 
   useEffect(() => {
     api.onThisDay().then(setResult).catch((err) => setError(err.message));

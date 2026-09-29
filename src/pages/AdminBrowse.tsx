@@ -4,14 +4,18 @@
 
 import { useEffect, useState } from "react";
 import type { LetterSummary, SearchResult } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { Link } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function AdminBrowsePage() {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [letters, setLetters] = useState<LetterSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(pageTitle("Admin browse"));
 
   useEffect(() => {
     api

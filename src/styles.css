@@ -212,6 +212,14 @@ button {
   font-size: 13px;
 }
 
+.letter-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  border: 1px solid var(--photo-placeholder-border);
+}
+
 .letter-body {
   margin-top: 34px;
   display: flex;

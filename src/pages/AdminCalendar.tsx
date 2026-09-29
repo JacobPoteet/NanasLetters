@@ -6,9 +6,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { AdminCalendarSummary, Letter } from "../../shared/types";
 import type { CalendarDay } from "../../shared/calendarGrid";
 import { buildMonthGrid } from "../../shared/calendarGrid";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { Link, useRouter } from "../router";
 import { MonthGrid } from "../components/calendar/MonthGrid";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -33,6 +35,8 @@ export function AdminCalendarPage() {
   const [year, setYear] = useState<number | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [expandedLetters, setExpandedLetters] = useState<Letter[] | null>(null);
+
+  useDocumentTitle(pageTitle("Calendar"));
 
   useEffect(() => {
     api

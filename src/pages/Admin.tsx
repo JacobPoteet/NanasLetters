@@ -6,6 +6,8 @@
 
 import { useEffect, useState } from "react";
 import type { ReviewQueueItem } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 async function fetchQueue(): Promise<ReviewQueueItem[]> {
   const res = await fetch("/api/admin/review-queue");
@@ -148,6 +150,8 @@ function ReviewItemCard({ item, onHandled }: { item: ReviewQueueItem; onHandled:
 export function AdminPage() {
   const [items, setItems] = useState<ReviewQueueItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(pageTitle("Review queue"));
 
   useEffect(() => {
     fetchQueue().then(setItems).catch((err) => setError(err.message));
