@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Letter, Role } from "../../shared/types";
 import { paragraphsWithHighlight } from "../../shared/letterHighlight";
-import { meditationSearchUrl } from "../../shared/meditationSearchUrl";
+import { meditationArchiveUrl } from "../../shared/meditationArchiveUrl";
 import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
@@ -129,7 +129,7 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
             <>
               <div className="meditation-note__title">{letter.meditationTitle}</div>
               <a
-                href={meditationSearchUrl(letter.date)}
+                href={meditationArchiveUrl(letter.date)}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -140,7 +140,7 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
                   color: "var(--ink-faint)",
                 }}
               >
-                Search for it on cac.org →
+                Find it on cac.org →
               </a>
             </>
           )}
