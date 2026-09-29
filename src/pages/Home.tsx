@@ -45,9 +45,8 @@ function RecentCommentRow({ comment }: { comment: RecentComment }) {
   );
 }
 
-// On a narrow screen only this many years show before a "show more" button,
-// so the comment feed below is never buried under a long run of years. On a
-// wide screen the feed sits beside the list and CSS ignores the cap.
+// Only this many years show before a "show more" button, so a day with many
+// letters stays short and the comment feed is never buried below it.
 const COLLAPSED_LETTER_COUNT = 3;
 
 function LetterCard({ letter, extra }: { letter: LetterSummary; extra?: boolean }) {

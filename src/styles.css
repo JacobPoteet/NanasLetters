@@ -139,7 +139,7 @@ button {
 
 /* Home pairs On this day with the comment feed. Wide: two columns, so a long
    run of years never pushes the family's comments out of sight. Narrow: one
-   column, with the list capped (see .letter-list--collapsed). */
+   column. At any width the list is capped (see .letter-list--collapsed). */
 .content--home {
   max-width: 1040px;
 }
@@ -156,7 +156,13 @@ button {
     align-items: start;
   }
 
+  /* Sticky so the feed stays beside the letters while scrolling; its own
+     scroll handles a feed taller than the viewport instead of clipping. */
   .home-grid .recent-comments {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     margin-top: 8px;
     padding: 0 0 0 40px;
     border-top: none;
@@ -169,7 +175,6 @@ button {
 }
 
 .letter-list__more {
-  display: none;
   margin-top: 20px;
   padding: 10px 16px;
   min-height: 44px;
@@ -186,14 +191,8 @@ button {
   color: var(--ink);
 }
 
-@media (max-width: 899px) {
-  .letter-list--collapsed .letter-card--extra {
-    display: none;
-  }
-
-  .letter-list__more {
-    display: inline-block;
-  }
+.letter-list--collapsed .letter-card--extra {
+  display: none;
 }
 
 .letter-list {
