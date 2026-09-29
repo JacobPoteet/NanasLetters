@@ -45,9 +45,14 @@ function RecentCommentRow({ comment }: { comment: RecentComment }) {
   );
 }
 
-function LetterCard({ letter }: { letter: LetterSummary }) {
+// On a narrow screen only this many years show before a "show more" button,
+// so the comment feed below is never buried under a long run of years. On a
+// wide screen the feed sits beside the list and CSS ignores the cap.
+const COLLAPSED_LETTER_COUNT = 3;
+
+function LetterCard({ letter, extra }: { letter: LetterSummary; extra?: boolean }) {
   return (
-    <div className="letter-card reveal-on-scroll">
+    <div className={`letter-card reveal-on-scroll${extra ? " letter-card--extra" : ""}`}>
       <div className="letter-card__year">{letter.date.slice(0, 4)}</div>
       <div className="letter-card__body">
         <div className="letter-card__excerpt">"{letter.excerpt}"</div>
@@ -65,6 +70,7 @@ export function HomePage() {
   const [stats, setStats] = useState<ArchiveStats | null>(null);
   const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useDocumentTitle(pageTitle());
 
@@ -82,12 +88,14 @@ export function HomePage() {
   if (!result) return <div className="content">Loading…</div>;
 
   const showingNearby = result.exact.length === 0;
+  const letters = showingNearby ? result.nearby : result.exact;
+  const hiddenCount = Math.max(0, letters.length - COLLAPSED_LETTER_COUNT);
   // Genuinely empty archive (an unseeded local dev DB, say) — a "0 letters
   // kept" line would read as broken, not informative, so skip it entirely.
   const showMasthead = stats !== null && stats.totalLetters > 0 && stats.firstLetterId !== null;
 
   return (
-    <div className="content">
+    <div className="content content--home">
       {showMasthead && (
         <p className="home-masthead">
           {stats.totalLetters.toLocaleString()} letters, kept since {formatMonthYear(stats.firstDate)} —{" "}
@@ -95,26 +103,24 @@ export function HomePage() {
         </p>
       )}
 
+      <div className="home-grid">
       <div className={showMasthead ? "home-onthisday" : undefined}>
         <div className="eyebrow">On this day</div>
         <div className="big-date">{formatMonthDay(result.monthDay)}</div>
         <div className="subtext">Letters written on this day, across the years.</div>
 
-        {showingNearby ? (
-          <>
-            <div className="empty-state">Nothing from exactly this day yet — here are a few days either side.</div>
-            <div className="letter-list">
-              {result.nearby.map((letter) => (
-                <LetterCard key={letter.id} letter={letter} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="letter-list">
-            {result.exact.map((letter) => (
-              <LetterCard key={letter.id} letter={letter} />
-            ))}
-          </div>
+        {showingNearby && (
+          <div className="empty-state">Nothing from exactly this day yet — here are a few days either side.</div>
+        )}
+        <div className={`letter-list${hiddenCount > 0 && !expanded ? " letter-list--collapsed" : ""}`}>
+          {letters.map((letter, i) => (
+            <LetterCard key={letter.id} letter={letter} extra={i >= COLLAPSED_LETTER_COUNT} />
+          ))}
+        </div>
+        {hiddenCount > 0 && !expanded && (
+          <button type="button" className="letter-list__more" onClick={() => setExpanded(true)}>
+            Show {hiddenCount} more {hiddenCount === 1 ? "year" : "years"}
+          </button>
         )}
       </div>
 
@@ -129,6 +135,7 @@ export function HomePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

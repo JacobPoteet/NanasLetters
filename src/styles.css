@@ -137,6 +137,65 @@ button {
   margin-top: 8px;
 }
 
+/* Home pairs On this day with the comment feed. Wide: two columns, so a long
+   run of years never pushes the family's comments out of sight. Narrow: one
+   column, with the list capped (see .letter-list--collapsed). */
+.content--home {
+  max-width: 1040px;
+}
+
+.home-grid {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .home-grid .recent-comments {
+    margin-top: 8px;
+    padding: 0 0 0 40px;
+    border-top: none;
+    border-left: 1px solid var(--border);
+  }
+
+  .home-grid .recent-comment__body {
+    font-size: 16px;
+  }
+}
+
+.letter-list__more {
+  display: none;
+  margin-top: 20px;
+  padding: 10px 16px;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--accent-link);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.letter-list__more:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+@media (max-width: 899px) {
+  .letter-list--collapsed .letter-card--extra {
+    display: none;
+  }
+
+  .letter-list__more {
+    display: inline-block;
+  }
+}
+
 .letter-list {
   margin-top: 40px;
   border-top: 1px solid var(--border);
