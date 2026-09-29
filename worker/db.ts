@@ -1,14 +1,19 @@
 import type {
   AdminCalendarSummary,
+  AdminComment,
   AnalyticsDay,
   AnalyticsPage,
   AnalyticsSummary,
   ArchiveStats,
+  BannedDevice,
+  Comment,
+  CommentsAdminSummary,
   Letter,
   LetterSummary,
   MostReadLetter,
   OnThisDayResult,
   Photo,
+  RecentComment,
   ReviewQueueItem,
   SearchResult,
   SearchSort,
@@ -547,5 +552,206 @@ export async function getCalendarSummary(db: D1Database): Promise<AdminCalendarS
     today: new Date().toISOString().slice(0, 10),
     lettersByDate,
     pendingReviewDates: (reviewRows.results ?? []).map((r) => r.received_date),
+  };
+}
+
+// --- Settings (generic key/value flags, first used for comments) ---
+
+export async function getCommentsRequireLogin(db: D1Database): Promise<boolean> {
+  const row = await db
+    .prepare("SELECT value FROM settings WHERE key = 'comments_require_login'")
+    .first<{ value: string }>();
+  return (row?.value ?? "true") === "true";
+}
+
+export async function setCommentsRequireLogin(db: D1Database, value: boolean): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO settings (key, value) VALUES ('comments_require_login', ?1)
+       ON CONFLICT (key) DO UPDATE SET value = ?1`,
+    )
+    .bind(value ? "true" : "false")
+    .run();
+}
+
+// --- Comments ---
+
+interface CommentRow {
+  id: number;
+  letter_id: number;
+  author_name: string | null;
+  body: string;
+  created_at: string;
+}
+
+function rowToComment(row: CommentRow): Comment {
+  return { id: row.id, letterId: row.letter_id, authorName: row.author_name, body: row.body, createdAt: row.created_at };
+}
+
+export async function getCommentsForLetter(db: D1Database, letterId: number): Promise<Comment[]> {
+  const rows = await db
+    .prepare(
+      "SELECT id, letter_id, author_name, body, created_at FROM comments WHERE letter_id = ?1 AND status = 'visible' ORDER BY created_at ASC, id ASC",
+    )
+    .bind(letterId)
+    .all<CommentRow>();
+  return (rows.results ?? []).map(rowToComment);
+}
+
+export async function isDeviceBanned(db: D1Database, deviceId: string): Promise<boolean> {
+  const row = await db.prepare("SELECT 1 FROM comment_bans WHERE device_id = ?1").bind(deviceId).first();
+  return row !== null;
+}
+
+const COMMENT_RATE_LIMIT_WINDOW_SECONDS = 60;
+const COMMENT_RATE_LIMIT_MAX = 5;
+
+/** Cheap insurance against a burst of spam before an admin can reach the ban button — not a moderation strategy on its own. */
+export async function isCommentRateLimited(db: D1Database, deviceId: string): Promise<boolean> {
+  const row = await db
+    .prepare(`SELECT count(*) as c FROM comments WHERE device_id = ?1 AND created_at >= datetime('now', ?2)`)
+    .bind(deviceId, `-${COMMENT_RATE_LIMIT_WINDOW_SECONDS} seconds`)
+    .first<{ c: number }>();
+  return (row?.c ?? 0) >= COMMENT_RATE_LIMIT_MAX;
+}
+
+export async function insertComment(
+  db: D1Database,
+  comment: { letterId: number; deviceId: string; ipHash: string | null; authorName: string | null; body: string },
+): Promise<number> {
+  const result = await db
+    .prepare("INSERT INTO comments (letter_id, device_id, ip_hash, author_name, body) VALUES (?1, ?2, ?3, ?4, ?5)")
+    .bind(comment.letterId, comment.deviceId, comment.ipHash, comment.authorName, comment.body)
+    .run();
+  return result.meta.last_row_id;
+}
+
+const RECENT_COMMENTS_LIMIT = 8;
+
+/** Homepage feed (Jacob's ask: promote a comment instead of letting it get lost on its own letter page). */
+export async function getRecentComments(db: D1Database, limit = RECENT_COMMENTS_LIMIT): Promise<RecentComment[]> {
+  const rows = await db
+    .prepare(
+      `SELECT c.id, c.letter_id, c.author_name, c.body, c.created_at, l.date as letter_date, l.text as letter_text
+       FROM comments c JOIN letters l ON l.id = c.letter_id
+       WHERE c.status = 'visible'
+       ORDER BY c.created_at DESC, c.id DESC LIMIT ?1`,
+    )
+    .bind(limit)
+    .all<CommentRow & { letter_date: string; letter_text: string }>();
+  return (rows.results ?? []).map((r) => ({
+    ...rowToComment(r),
+    letterDate: r.letter_date,
+    letterExcerpt: excerptOf(r.letter_text),
+  }));
+}
+
+// --- Admin: comments moderation (Jacob's ask: delete a comment, ban a
+// device, or wipe everything from a device, without a pre-moderation queue) ---
+
+export async function listCommentsForAdmin(
+  db: D1Database,
+  filters: { letterId?: number; deviceId?: string; includeDeleted?: boolean } = {},
+): Promise<AdminComment[]> {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (filters.letterId !== undefined) {
+    params.push(filters.letterId);
+    conditions.push(`c.letter_id = ?${params.length}`);
+  }
+  if (filters.deviceId !== undefined) {
+    params.push(filters.deviceId);
+    conditions.push(`c.device_id = ?${params.length}`);
+  }
+  if (!filters.includeDeleted) conditions.push(`c.status = 'visible'`);
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const rows = await db
+    .prepare(
+      `SELECT c.id, c.letter_id, c.author_name, c.body, c.created_at, c.device_id, c.ip_hash, c.status,
+         l.date as letter_date,
+         EXISTS(SELECT 1 FROM comment_bans b WHERE b.device_id = c.device_id) as banned
+       FROM comments c JOIN letters l ON l.id = c.letter_id
+       ${where}
+       ORDER BY c.created_at DESC, c.id DESC`,
+    )
+    .bind(...params)
+    .all<
+      CommentRow & {
+        device_id: string;
+        ip_hash: string | null;
+        status: "visible" | "deleted";
+        letter_date: string;
+        banned: number;
+      }
+    >();
+
+  return (rows.results ?? []).map((r) => ({
+    ...rowToComment(r),
+    deviceId: r.device_id,
+    ipHash: r.ip_hash,
+    status: r.status,
+    letterDate: r.letter_date,
+    bannedDevice: r.banned === 1,
+  }));
+}
+
+export async function deleteComment(db: D1Database, id: number): Promise<void> {
+  await db.prepare("UPDATE comments SET status = 'deleted' WHERE id = ?1").bind(id).run();
+}
+
+export async function deleteCommentsByDevice(db: D1Database, deviceId: string): Promise<void> {
+  await db.prepare("UPDATE comments SET status = 'deleted' WHERE device_id = ?1").bind(deviceId).run();
+}
+
+export async function banDevice(db: D1Database, deviceId: string, reason: string | null): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO comment_bans (device_id, reason) VALUES (?1, ?2)
+       ON CONFLICT (device_id) DO UPDATE SET reason = ?2`,
+    )
+    .bind(deviceId, reason)
+    .run();
+}
+
+export async function unbanDevice(db: D1Database, deviceId: string): Promise<void> {
+  await db.prepare("DELETE FROM comment_bans WHERE device_id = ?1").bind(deviceId).run();
+}
+
+export async function listBannedDevices(db: D1Database): Promise<BannedDevice[]> {
+  const rows = await db
+    .prepare(
+      `SELECT b.device_id, b.reason, b.banned_at, count(c.id) as comment_count
+       FROM comment_bans b LEFT JOIN comments c ON c.device_id = b.device_id
+       GROUP BY b.device_id ORDER BY b.banned_at DESC`,
+    )
+    .all<{ device_id: string; reason: string | null; banned_at: string; comment_count: number }>();
+  return (rows.results ?? []).map((r) => ({
+    deviceId: r.device_id,
+    reason: r.reason,
+    bannedAt: r.banned_at,
+    commentCount: r.comment_count,
+  }));
+}
+
+export async function getCommentsAdminSummary(db: D1Database): Promise<CommentsAdminSummary> {
+  const [totals, today, week, banned] = await Promise.all([
+    db
+      .prepare("SELECT count(*) as c, count(distinct device_id) as devices FROM comments WHERE status = 'visible'")
+      .first<{ c: number; devices: number }>(),
+    db
+      .prepare("SELECT count(*) as c FROM comments WHERE status = 'visible' AND date(created_at) = date('now')")
+      .first<{ c: number }>(),
+    db
+      .prepare("SELECT count(*) as c FROM comments WHERE status = 'visible' AND created_at >= datetime('now', '-7 days')")
+      .first<{ c: number }>(),
+    db.prepare("SELECT count(*) as c FROM comment_bans").first<{ c: number }>(),
+  ]);
+  return {
+    totalComments: totals?.c ?? 0,
+    uniqueDevices: totals?.devices ?? 0,
+    commentsToday: today?.c ?? 0,
+    commentsThisWeek: week?.c ?? 0,
+    bannedDevices: banned?.c ?? 0,
   };
 }

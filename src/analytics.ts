@@ -4,7 +4,9 @@
 
 const DEVICE_ID_KEY = "nanas-letters-device-id";
 
-function deviceId(): string {
+// Also the identity a comment (and a comment ban) is attached to — see
+// src/components/Comments.tsx — not a second id scheme.
+export function deviceId(): string {
   try {
     let id = localStorage.getItem(DEVICE_ID_KEY);
     if (!id) {

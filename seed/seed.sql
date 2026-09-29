@@ -3,6 +3,7 @@
 -- written to span a few of the format eras found during the parsing
 -- experiment, so the app has something real to look at under `npm run dev`.
 
+DELETE FROM comments;
 DELETE FROM letter_photos;
 DELETE FROM review_queue;
 DELETE FROM letters;
@@ -33,3 +34,12 @@ INSERT INTO letter_photos (letter_id, r2_key, mime_type, caption)
 -- One review-queue item, so the admin page has something to act on locally.
 INSERT INTO review_queue (gmail_message_id, reason, received_date, raw_text) VALUES
   ('seed-review-1', 'no_forward_marker', date('now', '-2 days'), 'Just a quick note today, nothing forwarded beneath it — the parser could not find a quoted block to split on.');
+
+-- A couple of comments, so the homepage feed, the letter view's thread, and
+-- the admin comments panel all have something to show locally.
+INSERT INTO comments (letter_id, device_id, ip_hash, author_name, body)
+  SELECT id, 'seed-device-1', NULL, 'Aunt Carol', 'The zinnias! I remember when you planted those.'
+  FROM letters WHERE gmail_message_id = 'seed-last-year';
+INSERT INTO comments (letter_id, device_id, ip_hash, author_name, body)
+  SELECT id, 'seed-device-2', NULL, NULL, 'Made me cry a little this morning. Love you, Grandma.'
+  FROM letters WHERE gmail_message_id = 'seed-today';

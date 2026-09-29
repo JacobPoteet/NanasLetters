@@ -431,6 +431,132 @@ button {
   }
 }
 
+/* Recent comments feed (Home) — same warm, reading-facing register as the
+   rest of the family surfaces, not a boxed activity-log widget. */
+.recent-comments {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.recent-comment-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.recent-comment__meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.recent-comment__author {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.recent-comment__body {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 6px 0 0;
+}
+
+/* The letter view's comment thread — plain, flat, no reply nesting. */
+.comments {
+  margin-top: 44px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.comment-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.comment {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* The comment a family member linked in from the homepage feed to (see
+   Comments.tsx's scrollToCommentId) — same soft warm wash as .letter-highlight. */
+.comment--linked {
+  background: rgba(176, 82, 45, 0.08);
+  border-radius: 4px;
+  padding: 14px 16px 20px;
+  margin: 0 -16px;
+}
+
+.comment__meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-muted);
+  display: flex;
+  gap: 8px;
+}
+
+.comment__author {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.comment__date {
+  color: var(--ink-faint);
+}
+
+.comment__body {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+
+.comment-form {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+}
+
+.comment-form input,
+.comment-form textarea {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.comment-form button {
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.comment-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

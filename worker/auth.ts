@@ -83,6 +83,16 @@ export async function passphraseMatches(supplied: string, expected: string): Pro
   return diff === 0;
 }
 
+/**
+ * HMAC-SHA256 of a value against a secret, base64url-encoded — used to
+ * correlate moderation signals (e.g. a commenter's IP, see
+ * worker/routes/comments.ts) without ever storing the raw value. Not a
+ * session token: no expiry, no role payload, just a keyed one-way hash.
+ */
+export async function hashForModeration(value: string, secret: string): Promise<string> {
+  return sign(value, secret);
+}
+
 export const SESSION_COOKIE = "nana_session";
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 

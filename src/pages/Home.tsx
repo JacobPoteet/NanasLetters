@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ArchiveStats, LetterSummary, OnThisDayResult } from "../../shared/types";
+import type { ArchiveStats, LetterSummary, OnThisDayResult, RecentComment } from "../../shared/types";
 import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
@@ -21,6 +21,30 @@ function formatMonthYear(date: string): string {
   return `${MONTH_NAMES[month - 1]} ${year}`;
 }
 
+function formatFullDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  return `${MONTH_NAMES[month - 1]} ${day}, ${year}`;
+}
+
+const COMMENT_FEED_BODY_LENGTH = 140;
+
+function truncateComment(body: string): string {
+  return body.length > COMMENT_FEED_BODY_LENGTH ? `${body.slice(0, COMMENT_FEED_BODY_LENGTH).trimEnd()}…` : body;
+}
+
+function RecentCommentRow({ comment }: { comment: RecentComment }) {
+  return (
+    <div className="recent-comment reveal-on-scroll">
+      <div className="recent-comment__meta">
+        <span className="recent-comment__author">{comment.authorName ?? "A family member"}</span>
+        <span className="recent-comment__on"> on </span>
+        <Link to={`/letters/${comment.letterId}?comment=${comment.id}`}>the letter from {formatFullDate(comment.letterDate)}</Link>
+      </div>
+      <p className="recent-comment__body">"{truncateComment(comment.body)}"</p>
+    </div>
+  );
+}
+
 function LetterCard({ letter }: { letter: LetterSummary }) {
   return (
     <div className="letter-card reveal-on-scroll">
@@ -39,6 +63,7 @@ function LetterCard({ letter }: { letter: LetterSummary }) {
 export function HomePage() {
   const [result, setResult] = useState<OnThisDayResult | null>(null);
   const [stats, setStats] = useState<ArchiveStats | null>(null);
+  const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useDocumentTitle(pageTitle());
@@ -46,6 +71,10 @@ export function HomePage() {
   useEffect(() => {
     api.onThisDay().then(setResult).catch((err) => setError(err.message));
     api.stats().then(setStats).catch(() => {});
+    api
+      .recentComments()
+      .then((r) => setRecentComments(r.comments))
+      .catch(() => {});
     trackVisit("home");
   }, []);
 
@@ -88,6 +117,18 @@ export function HomePage() {
           </div>
         )}
       </div>
+
+      {recentComments.length > 0 && (
+        <div className="recent-comments">
+          <div className="eyebrow">Recent comments</div>
+          <div className="subtext">What the family's been saying, across the archive.</div>
+          <div className="recent-comment-list">
+            {recentComments.map((comment) => (
+              <RecentCommentRow key={comment.id} comment={comment} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

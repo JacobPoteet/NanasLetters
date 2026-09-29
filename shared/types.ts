@@ -110,3 +110,47 @@ export interface AnalyticsSummary {
   /** Most-read letters all time, most-read first. */
   mostRead: MostReadLetter[];
 }
+
+/** A family comment on one letter — family-facing shape, no moderation fields. */
+export interface Comment {
+  id: number;
+  letterId: number;
+  /** Null when the commenter left the name field blank. */
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+}
+
+/** A comment plus enough of its letter to render the homepage feed entry and link to it. */
+export interface RecentComment extends Comment {
+  letterDate: string;
+  letterExcerpt: string;
+}
+
+/** A comment as the admin moderation table needs it — everything a ban/delete decision depends on. */
+export interface AdminComment extends Comment {
+  deviceId: string;
+  /** Null in local dev, where Cloudflare never sets CF-Connecting-IP. */
+  ipHash: string | null;
+  status: "visible" | "deleted";
+  letterDate: string;
+  /** True when this comment's device is currently in comment_bans. */
+  bannedDevice: boolean;
+}
+
+export interface BannedDevice {
+  deviceId: string;
+  reason: string | null;
+  bannedAt: string;
+  /** All comments ever left by this device (visible + deleted), for context on the ban. */
+  commentCount: number;
+}
+
+/** The comments admin panel's usage-tracking header strip. */
+export interface CommentsAdminSummary {
+  totalComments: number;
+  uniqueDevices: number;
+  commentsToday: number;
+  commentsThisWeek: number;
+  bannedDevices: number;
+}

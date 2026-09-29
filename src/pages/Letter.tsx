@@ -5,6 +5,7 @@ import { meditationArchiveUrl } from "../../shared/meditationArchiveUrl";
 import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
+import { Comments } from "../components/Comments";
 import { Link } from "../router";
 import { useDocumentTitle } from "../useDocumentTitle";
 
@@ -35,6 +36,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
   const [error, setError] = useState<string | null>(null);
   const highlightRef = useRef<HTMLParagraphElement | null>(null);
   const highlight = new URLSearchParams(search).get("highlight");
+  const commentParam = new URLSearchParams(search).get("comment");
+  const scrollToCommentId = commentParam && /^\d+$/.test(commentParam) ? Number(commentParam) : null;
 
   useDocumentTitle(pageTitle(data ? formatDate(data.letter.date) : null));
 
@@ -151,6 +154,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
         {prevId ? <Link to={`/letters/${prevId}`}>← Previous letter</Link> : <span />}
         {nextId ? <Link to={`/letters/${nextId}`}>Next letter →</Link> : <span />}
       </div>
+
+      <Comments letterId={id} scrollToCommentId={scrollToCommentId} />
     </div>
   );
 }
