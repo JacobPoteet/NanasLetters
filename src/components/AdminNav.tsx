@@ -12,6 +12,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <Link to="/admin/browse">Browse &amp; edit letters</Link>
         <Link to="/admin/calendar">Calendar</Link>
         <Link to="/admin/analytics">Usage</Link>
+        <Link to="/admin/comments">Comments</Link>
       </nav>
       {children}
     </div>

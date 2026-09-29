@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createToken, isRole, passphraseMatches, verifyToken } from "./auth";
+import { createToken, hashForModeration, isRole, passphraseMatches, verifyToken } from "./auth";
 
 const SECRET = "test-secret-not-a-real-one";
 const HOUR = 3_600_000;
@@ -57,5 +57,25 @@ describe("passphraseMatches", () => {
     expect(await passphraseMatches("open-sesame", "open-sesame")).toBe(true);
     expect(await passphraseMatches("open-sesam", "open-sesame")).toBe(false);
     expect(await passphraseMatches("", "open-sesame")).toBe(false);
+  });
+});
+
+describe("hashForModeration", () => {
+  it("is deterministic for the same value and secret", async () => {
+    const a = await hashForModeration("203.0.113.5", SECRET);
+    const b = await hashForModeration("203.0.113.5", SECRET);
+    expect(a).toBe(b);
+  });
+
+  it("differs for different values", async () => {
+    const a = await hashForModeration("203.0.113.5", SECRET);
+    const b = await hashForModeration("203.0.113.6", SECRET);
+    expect(a).not.toBe(b);
+  });
+
+  it("differs for different secrets, so it can't be recomputed off-platform", async () => {
+    const a = await hashForModeration("203.0.113.5", SECRET);
+    const b = await hashForModeration("203.0.113.5", "a-different-secret");
+    expect(a).not.toBe(b);
   });
 });

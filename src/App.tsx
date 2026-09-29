@@ -14,6 +14,7 @@ import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
 import { AdminAnalyticsPage } from "./pages/AdminAnalytics";
 import { AdminCalendarPage } from "./pages/AdminCalendar";
+import { AdminCommentsPage } from "./pages/AdminComments";
 import { NotFoundPage } from "./pages/NotFound";
 import { AdminShell } from "./components/AdminNav";
 
@@ -42,10 +43,12 @@ export function App() {
   const isAdminBrowse = role === "admin" && path === "/admin/browse";
   const isAdminAnalytics = role === "admin" && path === "/admin/analytics";
   const isAdminCalendar = role === "admin" && path === "/admin/calendar";
+  const isAdminComments = role === "admin" && path === "/admin/comments";
   const isAdminReview = role === "admin" && path === "/admin";
   const isAdminPath = path === "/admin" || path.startsWith("/admin/");
   const needsAdminStepUp = role !== "admin" && isAdminPath;
-  const isKnownAdminRoute = adminEditId !== null || isAdminBrowse || isAdminAnalytics || isAdminCalendar || isAdminReview;
+  const isKnownAdminRoute =
+    adminEditId !== null || isAdminBrowse || isAdminAnalytics || isAdminCalendar || isAdminComments || isAdminReview;
 
   return (
     <div className="page">
@@ -67,6 +70,10 @@ export function App() {
       ) : isAdminCalendar ? (
         <AdminShell>
           <AdminCalendarPage />
+        </AdminShell>
+      ) : isAdminComments ? (
+        <AdminShell>
+          <AdminCommentsPage />
         </AdminShell>
       ) : isAdminReview ? (
         <AdminShell>

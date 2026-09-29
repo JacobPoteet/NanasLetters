@@ -1,10 +1,15 @@
 import type {
   AdminCalendarSummary,
+  AdminComment,
   AnalyticsSummary,
   ArchiveStats,
+  BannedDevice,
+  Comment,
+  CommentsAdminSummary,
   Letter,
   OnThisDayResult,
   LetterSummary,
+  RecentComment,
   Role,
   SearchResult,
   SearchSort,
@@ -55,4 +60,32 @@ export const api = {
     if (sort) query.set("sort", sort);
     return request<{ results: SearchResult[] }>(`/search?${query}`);
   },
+  comments: (letterId: number) => request<{ comments: Comment[] }>(`/letters/${letterId}/comments`),
+  postComment: (letterId: number, fields: { authorName: string | null; body: string; deviceId: string }) =>
+    request<{ comment: Comment }>(`/letters/${letterId}/comments`, { method: "POST", body: JSON.stringify(fields) }),
+  recentComments: (limit?: number) =>
+    request<{ comments: RecentComment[] }>(`/comments/recent${limit ? `?limit=${limit}` : ""}`),
+  adminComments: (filters?: { letterId?: number; deviceId?: string; includeDeleted?: boolean }) => {
+    const query = new URLSearchParams();
+    if (filters?.letterId) query.set("letterId", String(filters.letterId));
+    if (filters?.deviceId) query.set("deviceId", filters.deviceId);
+    if (filters?.includeDeleted) query.set("includeDeleted", "true");
+    const qs = query.toString();
+    return request<{ comments: AdminComment[] }>(`/admin/comments${qs ? `?${qs}` : ""}`);
+  },
+  adminCommentsSummary: () => request<CommentsAdminSummary>("/admin/comments/summary"),
+  adminBannedDevices: () => request<{ devices: BannedDevice[] }>("/admin/comments/banned"),
+  deleteComment: (id: number) => request<{ ok: true }>(`/admin/comments/${id}`, { method: "DELETE" }),
+  deleteCommentsByDevice: (deviceId: string) =>
+    request<{ ok: true }>(`/admin/comments/device/${encodeURIComponent(deviceId)}`, { method: "DELETE" }),
+  banDevice: (deviceId: string, reason?: string) =>
+    request<{ ok: true }>(`/admin/comments/device/${encodeURIComponent(deviceId)}/ban`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  unbanDevice: (deviceId: string) =>
+    request<{ ok: true }>(`/admin/comments/device/${encodeURIComponent(deviceId)}/unban`, { method: "POST" }),
+  getSettings: () => request<{ commentsRequireLogin: boolean }>("/admin/settings"),
+  updateSettings: (fields: { commentsRequireLogin: boolean }) =>
+    request<{ ok: true }>("/admin/settings", { method: "PUT", body: JSON.stringify(fields) }),
 };

@@ -10,6 +10,7 @@ import { Hono } from "hono";
 import authRoutes, { requireRole } from "./routes/auth";
 import lettersRoutes from "./routes/letters";
 import analyticsRoutes from "./routes/analytics";
+import commentsRoutes from "./routes/comments";
 import adminRoutes from "./routes/admin";
 import { runIngestion } from "./ingestion/sync";
 import { runBackup } from "./backup";
@@ -26,6 +27,7 @@ app.route("/api", authRoutes);
 app.use("/api/*", requireRole("family"));
 app.route("/api", lettersRoutes);
 app.route("/api", analyticsRoutes);
+app.route("/api", commentsRoutes);
 
 app.use("/api/admin/*", requireRole("admin"));
 app.route("/api/admin", adminRoutes);
