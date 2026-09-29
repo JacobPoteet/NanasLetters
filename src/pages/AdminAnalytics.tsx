@@ -3,12 +3,16 @@
 
 import { useEffect, useState } from "react";
 import type { AnalyticsSummary } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { Link } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function AdminAnalyticsPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(pageTitle("Analytics"));
 
   useEffect(() => {
     api.analyticsSummary().then(setSummary).catch((err) => setError(err.message));

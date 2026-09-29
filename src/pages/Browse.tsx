@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { ArchiveStats, LetterSummary } from "../../shared/types";
 import { groupLettersByYear } from "../../shared/groupLetters";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -30,6 +32,8 @@ export function BrowsePage() {
   const [error, setError] = useState<string | null>(null);
   const [jumpDate, setJumpDate] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
+  useDocumentTitle(pageTitle("Browse"));
 
   useEffect(() => {
     api

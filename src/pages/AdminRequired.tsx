@@ -11,12 +11,16 @@
 
 import { useState } from "react";
 import type { Role } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function AdminRequiredPage({ onSteppedUp }: { onSteppedUp: (role: Role) => void }) {
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useDocumentTitle(pageTitle("Admin access required"));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

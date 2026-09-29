@@ -57,9 +57,14 @@ app.get("/search", async (c) => {
   return c.json({ results });
 });
 
-// Serves a letter's photo out of R2. Not wired to a real bucket yet — R2
-// needs enabling on the Cloudflare account first; see wrangler.jsonc.
-app.get("/photos/:key", async (c) => {
+// Serves a letter's photo out of R2 (nanas-letters-photos, bound as PHOTOS —
+// see wrangler.jsonc). The 503 below only fires in a local/dev env missing
+// the binding; prod has had it since the deploy bootstrap.
+//
+// The `{.+}` regex is load-bearing: a plain `:key` only matches one path
+// segment, so any r2Key with a slash in it (a "seed/placeholder.jpg"-style
+// prefix, which the local dev fixture uses) would silently 404.
+app.get("/photos/:key{.+}", async (c) => {
   const photos = c.env.PHOTOS;
   if (!photos) return c.json({ error: "Photo storage not configured yet" }, 503);
   const object = await photos.get(c.req.param("key"));

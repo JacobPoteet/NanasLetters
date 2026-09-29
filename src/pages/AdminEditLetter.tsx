@@ -5,8 +5,10 @@
 
 import { useEffect, useState } from "react";
 import type { Letter } from "../../shared/types";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { Link, useRouter } from "../router";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function AdminEditLetterPage({ id }: { id: number }) {
   const { navigate } = useRouter();
@@ -20,6 +22,8 @@ export function AdminEditLetterPage({ id }: { id: number }) {
   const [saved, setSaved] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useDocumentTitle(pageTitle(letter ? `Edit ${letter.date}` : "Edit letter"));
 
   useEffect(() => {
     setLetter(null);

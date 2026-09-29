@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { ArchiveStats, SearchResult, SearchSort } from "../../shared/types";
 import { decodeSearchQuery, encodeSearchQuery } from "../../shared/searchQuery";
+import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link, useRouter } from "../router";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -27,6 +29,8 @@ export function SearchPage({ search }: { search: string }) {
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [stats, setStats] = useState<ArchiveStats | null>(null);
+
+  useDocumentTitle(pageTitle("Search"));
 
   useEffect(() => {
     trackVisit("search");
