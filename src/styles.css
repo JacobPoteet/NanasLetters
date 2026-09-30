@@ -137,9 +137,9 @@ button {
   margin-top: 8px;
 }
 
-/* Home pairs On this day with the comment feed. Wide: two columns, so a long
-   run of years never pushes the family's comments out of sight. Narrow: one
-   column. At any width the list is capped (see .letter-list--collapsed). */
+/* Home pairs On this day with the comment feed. Wide: two columns, so the
+   family's comments stay beside the letters however many years there are. Narrow: one
+   column. */
 .content--home {
   max-width: 1040px;
 }
@@ -172,27 +172,6 @@ button {
   .home-grid .recent-comment__body {
     font-size: 16px;
   }
-}
-
-.letter-list__more {
-  margin-top: 20px;
-  padding: 10px 16px;
-  min-height: 44px;
-  font-size: 14px;
-  color: var(--accent-link);
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.letter-list__more:hover {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
-.letter-list--collapsed .letter-card--extra {
-  display: none;
 }
 
 .letter-list {

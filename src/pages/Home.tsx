@@ -45,13 +45,9 @@ function RecentCommentRow({ comment }: { comment: RecentComment }) {
   );
 }
 
-// Only this many years show before a "show more" button, so a day with many
-// letters stays short and the comment feed is never buried below it.
-const COLLAPSED_LETTER_COUNT = 3;
-
-function LetterCard({ letter, extra }: { letter: LetterSummary; extra?: boolean }) {
+function LetterCard({ letter }: { letter: LetterSummary }) {
   return (
-    <div className={`letter-card reveal-on-scroll${extra ? " letter-card--extra" : ""}`}>
+    <div className="letter-card reveal-on-scroll">
       <div className="letter-card__year">{letter.date.slice(0, 4)}</div>
       <div className="letter-card__body">
         <div className="letter-card__excerpt">"{letter.excerpt}"</div>
@@ -69,7 +65,6 @@ export function HomePage() {
   const [stats, setStats] = useState<ArchiveStats | null>(null);
   const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   useDocumentTitle(pageTitle());
 
@@ -88,7 +83,6 @@ export function HomePage() {
 
   const showingNearby = result.exact.length === 0;
   const letters = showingNearby ? result.nearby : result.exact;
-  const hiddenCount = Math.max(0, letters.length - COLLAPSED_LETTER_COUNT);
   // Genuinely empty archive (an unseeded local dev DB, say) — a "0 letters
   // kept" line would read as broken, not informative, so skip it entirely.
   const showMasthead = stats !== null && stats.totalLetters > 0 && stats.firstLetterId !== null;
@@ -111,16 +105,11 @@ export function HomePage() {
         {showingNearby && (
           <div className="empty-state">Nothing from exactly this day yet — here are a few days either side.</div>
         )}
-        <div className={`letter-list${hiddenCount > 0 && !expanded ? " letter-list--collapsed" : ""}`}>
-          {letters.map((letter, i) => (
-            <LetterCard key={letter.id} letter={letter} extra={i >= COLLAPSED_LETTER_COUNT} />
+        <div className="letter-list">
+          {letters.map((letter) => (
+            <LetterCard key={letter.id} letter={letter} />
           ))}
         </div>
-        {hiddenCount > 0 && !expanded && (
-          <button type="button" className="letter-list__more" onClick={() => setExpanded(true)}>
-            Show {hiddenCount} more {hiddenCount === 1 ? "year" : "years"}
-          </button>
-        )}
       </div>
 
       {recentComments.length > 0 && (
