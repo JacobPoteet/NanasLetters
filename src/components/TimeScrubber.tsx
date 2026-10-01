@@ -203,23 +203,26 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
     }
   }
 
-  // Years always label; months label only where the lens has opened enough room around them.
+  // Only the hovered year shows its months, so older years stay quiet until pointed at.
+  const nearest = lens > 0.05 ? tickAtFraction(ticks, inverseFisheye(focusY, focusY, H, d) / (H || 1)) : null;
+  const activeYear = nearest?.year ?? null;
+  // A year's number marks its first (December) tick; while that year is hovered the tick is just December, like the rest.
+  const isYearLabel = (t: ScrubberTick) => yearStarts.has(t.key) && t.year !== activeYear;
+
+  // Other years always label; months label only where the lens has opened enough room around them.
   const placed: number[] = [];
   const ys = ticks.map((t) => drawn(t.fraction));
-  ticks.forEach((t, i) => yearStarts.has(t.key) && placed.push(ys[i]));
+  ticks.forEach((t, i) => isYearLabel(t) && placed.push(ys[i]));
   const labelled = new Set<string>();
   if (lens > 0.05) {
     ticks.forEach((t, i) => {
-      if (yearStarts.has(t.key)) return;
+      if (isYearLabel(t)) return;
       if (placed.every((p) => Math.abs(p - ys[i]) >= LABEL_GAP)) {
         placed.push(ys[i]);
         labelled.add(t.key);
       }
     });
   }
-  const nearest = lens > 0.05 ? tickAtFraction(ticks, inverseFisheye(focusY, focusY, H, d) / (H || 1)) : null;
-  // Only the hovered year shows its months, so older years stay quiet until pointed at.
-  const activeYear = nearest?.year ?? null;
   const markerY = drawn(position);
 
   return (
@@ -253,7 +256,8 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
         // Ticks swell and brighten with their closeness to the pointer, like a dock icon.
         const closeness = lens * Math.exp(-(((ys[i] - focusY) / 46) ** 2));
         const isNearest = nearest?.key === t.key;
-        const showLabel = isYear || labelled.has(t.key);
+        const asYear = isYearLabel(t);
+        const showLabel = asYear || labelled.has(t.key);
         return (
           <span
             key={t.key}
@@ -262,14 +266,14 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
           >
             {showLabel && (
               <span
-                className={`scrubber__label${isYear ? " scrubber__label--year" : ""}`}
+                className={`scrubber__label${asYear ? " scrubber__label--year" : ""}`}
                 style={{
-                  opacity: isYear ? 1 : t.year === activeYear ? Math.min(1, lens * (0.5 + closeness)) : 0,
+                  opacity: asYear ? 1 : t.year === activeYear ? Math.min(1, lens * (0.5 + closeness)) : 0,
                   fontSize: `${11 + closeness * 1.5}px`,
                   right: `${22 + closeness * 6}px`,
                 }}
               >
-                {isNearest && !isYear ? `${MONTH_NAMES[t.month - 1]} ${t.year}` : isYear ? t.year : MONTH_NAMES[t.month - 1].slice(0, 3)}
+                {asYear ? t.year : isNearest ? `${MONTH_NAMES[t.month - 1]} ${t.year}` : MONTH_NAMES[t.month - 1].slice(0, 3)}
               </span>
             )}
           </span>
