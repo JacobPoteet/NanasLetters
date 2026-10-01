@@ -16,7 +16,7 @@ const MAGNIFY = 1;
 // Minimum drawn gap between two labels before the later one is dropped.
 const LABEL_GAP = 15;
 // How fast the lens opens and closes, per frame (eased toward its target).
-const LENS_EASE = 0.2;
+const LENS_EASE = 0.09;
 
 function label(tick: ScrubberTick | null): string {
   return tick ? `${MONTH_NAMES[tick.month - 1]} ${tick.year}` : "";
@@ -218,6 +218,8 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
     });
   }
   const nearest = lens > 0.05 ? tickAtFraction(ticks, inverseFisheye(focusY, focusY, H, d) / (H || 1)) : null;
+  // Only the hovered year shows its months, so older years stay quiet until pointed at.
+  const activeYear = nearest?.year ?? null;
   const markerY = drawn(position);
 
   return (
@@ -262,7 +264,7 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
               <span
                 className={`scrubber__label${isYear ? " scrubber__label--year" : ""}`}
                 style={{
-                  opacity: isYear ? 1 : Math.min(1, lens * (0.5 + closeness)),
+                  opacity: isYear ? 1 : t.year === activeYear ? Math.min(1, lens * (0.5 + closeness)) : 0,
                   fontSize: `${11 + closeness * 1.5}px`,
                   right: `${22 + closeness * 6}px`,
                 }}
