@@ -1,8 +1,6 @@
-// The admin edit screen — explicitly exempt from the family-facing design
-// bar (CLAUDE.md's UI/layout decision), so this stays plain and functional.
-// v1 covers the review queue; per-letter editing (fixing a bad date or a bad
-// parse split) is the PUT /api/admin/letters/:id endpoint, not yet wired to
-// a form here — a follow-up within this same implementation pass.
+// The ingestion review queue: accept, edit-then-accept, or dismiss letters the
+// parser wasn't confident about. Explicitly exempt from the family-facing
+// design bar (CLAUDE.md's UI/layout decision), so this stays plain and functional.
 
 import { useEffect, useState } from "react";
 import type { ReviewQueueItem } from "../../shared/types";
@@ -147,11 +145,11 @@ function ReviewItemCard({ item, onHandled }: { item: ReviewQueueItem; onHandled:
   );
 }
 
-export function AdminPage() {
+export function AdminReviewPage() {
   const [items, setItems] = useState<ReviewQueueItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useDocumentTitle(pageTitle("Dashboard"));
+  useDocumentTitle(pageTitle("Review queue"));
 
   useEffect(() => {
     fetchQueue().then(setItems).catch((err) => setError(err.message));
@@ -163,7 +161,7 @@ export function AdminPage() {
 
   return (
     <div className="content" style={{ maxWidth: 900, fontFamily: "system-ui, sans-serif" }}>
-      <h1>Dashboard</h1>
+      <h1>Review queue</h1>
       {error && <div className="error-text">{error}</div>}
       {!items ? (
         <p>Loading…</p>

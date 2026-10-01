@@ -33,3 +33,13 @@ export function bucketVisitsByDay(rows: VisitRow[], sinceDay: string): DayBucket
 export function countNewDevicesOn(firstSeen: { first_at: string }[], day: string): number {
   return firstSeen.filter((r) => familyDayFromSqlite(r.first_at) === day).length;
 }
+
+/** How many of the SQLite `datetime('now')` timestamps fall on `day` in family time. */
+export function countOnDay(createdAts: string[], day: string): number {
+  return createdAts.filter((t) => familyDayFromSqlite(t) === day).length;
+}
+
+/** Whole calendar days from `fromDay` to `toDay` (both YYYY-MM-DD). */
+export function daysBetween(fromDay: string, toDay: string): number {
+  return Math.round((Date.parse(`${toDay}T00:00:00Z`) - Date.parse(`${fromDay}T00:00:00Z`)) / 86_400_000);
+}

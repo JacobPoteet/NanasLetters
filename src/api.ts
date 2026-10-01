@@ -2,6 +2,7 @@ import type {
   AdminCalendarSummary,
   AdminComment,
   AnalyticsSummary,
+  DashboardSummary,
   ArchiveStats,
   BannedDevice,
   Comment,
@@ -54,6 +55,7 @@ export const api = {
   ) =>
     request<{ letter: Letter }>(`/admin/letters/${id}`, { method: "PUT", body: JSON.stringify(fields) }),
   deleteLetter: (id: number) => request<{ ok: true }>(`/admin/letters/${id}`, { method: "DELETE" }),
+  dashboardSummary: () => request<DashboardSummary>("/admin/dashboard"),
   analyticsSummary: () => request<AnalyticsSummary>("/admin/analytics"),
   calendarSummary: () => request<AdminCalendarSummary>("/admin/calendar"),
   search: (q: string, from?: string, to?: string, sort?: SearchSort) => {

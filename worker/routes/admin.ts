@@ -13,6 +13,7 @@ import {
   getAnalyticsSummary,
   getCalendarSummary,
   getCommentsAdminSummary,
+  getDashboardSummary,
   getCommentsRequireLogin,
   getLetterById,
   getReviewItemById,
@@ -25,6 +26,10 @@ import {
 } from "../db";
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.get("/dashboard", async (c) => {
+  return c.json(await getDashboardSummary(c.env.DB));
+});
 
 app.get("/analytics", async (c) => {
   return c.json(await getAnalyticsSummary(c.env.DB));

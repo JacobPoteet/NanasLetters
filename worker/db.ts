@@ -7,6 +7,7 @@ import type {
   BannedDevice,
   Comment,
   CommentsAdminSummary,
+  DashboardSummary,
   Letter,
   LetterSummary,
   MostReadLetter,
@@ -18,7 +19,7 @@ import type {
   SearchSort,
 } from "../shared/types";
 import { nearbyMonthDays, familyDay, shiftDate } from "./dateWindow";
-import { bucketVisitsByDay, countNewDevicesOn } from "./analyticsDays";
+import { bucketVisitsByDay, countNewDevicesOn, countOnDay, daysBetween } from "./analyticsDays";
 import {
   buildFtsQuery,
   escapeAndMarkSnippet,
@@ -733,13 +734,14 @@ export async function listBannedDevices(db: D1Database): Promise<BannedDevice[]>
 }
 
 export async function getCommentsAdminSummary(db: D1Database): Promise<CommentsAdminSummary> {
-  const [totals, today, week, banned] = await Promise.all([
+  // Fetched a day wide on the UTC side, then bucketed in family time in JS.
+  const [totals, recent, week, banned] = await Promise.all([
     db
       .prepare("SELECT count(*) as c, count(distinct device_id) as devices FROM comments WHERE status = 'visible'")
       .first<{ c: number; devices: number }>(),
     db
-      .prepare("SELECT count(*) as c FROM comments WHERE status = 'visible' AND date(created_at) = date('now')")
-      .first<{ c: number }>(),
+      .prepare("SELECT created_at FROM comments WHERE status = 'visible' AND created_at >= datetime('now', '-2 days')")
+      .all<{ created_at: string }>(),
     db
       .prepare("SELECT count(*) as c FROM comments WHERE status = 'visible' AND created_at >= datetime('now', '-7 days')")
       .first<{ c: number }>(),
@@ -748,7 +750,7 @@ export async function getCommentsAdminSummary(db: D1Database): Promise<CommentsA
   return {
     totalComments: totals?.c ?? 0,
     uniqueDevices: totals?.devices ?? 0,
-    commentsToday: today?.c ?? 0,
+    commentsToday: countOnDay((recent.results ?? []).map((r) => r.created_at), familyDay()),
     commentsThisWeek: week?.c ?? 0,
     bannedDevices: banned?.c ?? 0,
   };
@@ -764,4 +766,25 @@ export async function getRandomLetterId(db: D1Database, excludeId?: number): Pro
   // Only reachable when the excluded letter is the entire archive.
   const only = await db.prepare("SELECT id FROM letters LIMIT 1").first<{ id: number }>();
   return only?.id ?? null;
+}
+
+export async function getDashboardSummary(db: D1Database): Promise<DashboardSummary> {
+  const [archive, analytics, comments, pending] = await Promise.all([
+    getArchiveStats(db),
+    getAnalyticsSummary(db),
+    getCommentsAdminSummary(db),
+    db.prepare("SELECT count(*) as c FROM review_queue WHERE status = 'pending'").first<{ c: number }>(),
+  ]);
+  const today = familyDay();
+  const todayBucket = analytics.daily.find((d) => d.day === today);
+  return {
+    today,
+    pendingReview: pending?.c ?? 0,
+    archive,
+    daysSinceLastLetter: archive.totalLetters === 0 ? null : daysBetween(archive.lastDate, today),
+    visitsToday: todayBucket?.visits ?? 0,
+    devicesToday: todayBucket?.devices ?? 0,
+    analytics,
+    comments,
+  };
 }

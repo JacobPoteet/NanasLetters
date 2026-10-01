@@ -9,7 +9,8 @@ import { SearchPage } from "./pages/Search";
 import { LetterPage } from "./pages/Letter";
 import { LoginPage } from "./pages/Login";
 import { AdminRequiredPage } from "./pages/AdminRequired";
-import { AdminPage } from "./pages/Admin";
+import { AdminDashboardPage } from "./pages/AdminDashboard";
+import { AdminReviewPage } from "./pages/AdminReview";
 import { AdminEditLetterPage } from "./pages/AdminEditLetter";
 import { AdminBrowsePage } from "./pages/AdminBrowse";
 import { AdminAnalyticsPage } from "./pages/AdminAnalytics";
@@ -44,11 +45,12 @@ export function App() {
   const isAdminAnalytics = role === "admin" && path === "/admin/analytics";
   const isAdminCalendar = role === "admin" && path === "/admin/calendar";
   const isAdminComments = role === "admin" && path === "/admin/comments";
-  const isAdminReview = role === "admin" && path === "/admin";
+  const isAdminReview = role === "admin" && path === "/admin/review";
+  const isAdminDashboard = role === "admin" && path === "/admin";
   const isAdminPath = path === "/admin" || path.startsWith("/admin/");
   const needsAdminStepUp = role !== "admin" && isAdminPath;
   const isKnownAdminRoute =
-    adminEditId !== null || isAdminBrowse || isAdminAnalytics || isAdminCalendar || isAdminComments || isAdminReview;
+    adminEditId !== null || isAdminBrowse || isAdminAnalytics || isAdminCalendar || isAdminComments || isAdminReview || isAdminDashboard;
 
   return (
     <div className="page">
@@ -77,7 +79,11 @@ export function App() {
         </AdminShell>
       ) : isAdminReview ? (
         <AdminShell>
-          <AdminPage />
+          <AdminReviewPage />
+        </AdminShell>
+      ) : isAdminDashboard ? (
+        <AdminShell>
+          <AdminDashboardPage />
         </AdminShell>
       ) : isAdminPath && !isKnownAdminRoute ? (
         <AdminShell>

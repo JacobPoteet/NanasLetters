@@ -154,3 +154,16 @@ export interface CommentsAdminSummary {
   commentsThisWeek: number;
   bannedDevices: number;
 }
+
+/** The admin Dashboard's at-a-glance summary — composed server-side from the existing summaries. */
+export interface DashboardSummary {
+  today: string; // YYYY-MM-DD, family time zone
+  pendingReview: number;
+  archive: ArchiveStats;
+  /** Whole days between the newest letter and today; null when the archive is empty. */
+  daysSinceLastLetter: number | null;
+  visitsToday: number;
+  devicesToday: number;
+  analytics: AnalyticsSummary;
+  comments: CommentsAdminSummary;
+}
