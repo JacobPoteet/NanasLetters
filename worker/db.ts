@@ -64,7 +64,7 @@ function rowToSummary(row: LetterRow): LetterSummary {
 }
 
 const SUMMARY_SELECT = `
-  SELECT l.id, l.date, l.text, l.meditation_title,
+  SELECT l.id, l.date, substr(l.text, 1, 600) AS text, l.meditation_title,
     EXISTS(SELECT 1 FROM letter_photos p WHERE p.letter_id = l.id) AS has_photo
   FROM letters l
 `;

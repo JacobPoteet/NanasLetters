@@ -34,8 +34,9 @@ export const api = {
   logout: () => request<{ ok: true }>("/logout", { method: "POST" }),
   onThisDay: (date?: string) => request<OnThisDayResult>(`/on-this-day${date ? `?date=${date}` : ""}`),
   stats: () => request<ArchiveStats>("/stats"),
-  browse: (params: { year?: number; month?: number; before?: { date: string; id: number } }) => {
+  browse: (params: { year?: number; month?: number; before?: { date: string; id: number }; limit?: number }) => {
     const query = new URLSearchParams();
+    if (params.limit) query.set("limit", String(params.limit));
     if (params.year) query.set("year", String(params.year));
     if (params.month) query.set("month", String(params.month));
     if (params.before) {
