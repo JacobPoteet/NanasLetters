@@ -6,6 +6,7 @@ import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
+import { TimeScrubber } from "../components/TimeScrubber";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
 import { useDocumentTitle } from "../useDocumentTitle";
 
@@ -56,6 +57,7 @@ export function BrowsePage() {
   const [jumpDate, setJumpDate] = useState<string | null>(null);
   const [returnedId, setReturnedId] = useState<number | null>(null);
   const restored = useRef(false);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   useDocumentTitle(pageTitle("Browse"));
 
@@ -149,14 +151,14 @@ export function BrowsePage() {
       ) : letters.length === 0 ? (
         <div className="empty-state">Nothing here yet.</div>
       ) : (
-        <div className="letter-list letter-list--grouped">
+        <div className="letter-list letter-list--grouped" ref={listRef}>
           {groups.map((group) => (
             <div key={group.year}>
               <h2 className="browse-year-header" id={`year-${group.year}`}>
                 {group.year}
               </h2>
               {group.months.map((month) => (
-                <div key={month.month}>
+                <div key={month.month} data-month-key={`${group.year}-${String(month.month).padStart(2, "0")}`}>
                   <div className="browse-month-label">{MONTH_NAMES[month.month - 1]}</div>
                   {month.letters.map((letter) => (
                     <div
@@ -181,6 +183,7 @@ export function BrowsePage() {
           ))}
         </div>
       )}
+      {letters && letters.length > 0 && <TimeScrubber listRef={listRef} contentKey={letters} />}
     </div>
   );
 }

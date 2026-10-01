@@ -755,3 +755,15 @@ export async function getCommentsAdminSummary(db: D1Database): Promise<CommentsA
     bannedDevices: banned?.c ?? 0,
   };
 }
+
+/** A uniformly random letter's id for "Surprise me", never `excludeId` (the one the reader is already on) when there's another to give. */
+export async function getRandomLetterId(db: D1Database, excludeId?: number): Promise<number | null> {
+  const row = await db
+    .prepare("SELECT id FROM letters WHERE id != ?1 ORDER BY RANDOM() LIMIT 1")
+    .bind(excludeId ?? -1)
+    .first<{ id: number }>();
+  if (row) return row.id;
+  // Only reachable when the excluded letter is the entire archive.
+  const only = await db.prepare("SELECT id FROM letters LIMIT 1").first<{ id: number }>();
+  return only?.id ?? null;
+}

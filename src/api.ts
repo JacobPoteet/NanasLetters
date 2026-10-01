@@ -45,6 +45,8 @@ export const api = {
     }
     return request<{ letters: LetterSummary[] }>(`/letters?${query}`);
   },
+  randomLetter: (excludeId?: number) =>
+    request<{ id: number }>(`/letters/random${excludeId ? `?exclude=${excludeId}` : ""}`),
   letter: (id: number) => request<{ letter: Letter; prevId: number | null; nextId: number | null }>(`/letters/${id}`),
   updateLetter: (
     id: number,

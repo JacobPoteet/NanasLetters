@@ -2,7 +2,7 @@
 // session — the guard is mounted in index.ts, ahead of this router.
 
 import { Hono } from "hono";
-import { browseLetters, getAdjacentLetterId, getArchiveStats, getLetterById, getOnThisDay, searchLetters } from "../db";
+import { browseLetters, getAdjacentLetterId, getArchiveStats, getLetterById, getOnThisDay, getRandomLetterId, searchLetters } from "../db";
 import { todayMonthDay } from "../dateWindow";
 import type { SearchSort } from "../../shared/types";
 
@@ -38,6 +38,14 @@ app.get("/letters", async (c) => {
     before: beforeDate && beforeId ? { date: beforeDate, id: Number(beforeId) } : undefined,
   });
   return c.json({ letters });
+});
+
+// Registered ahead of /letters/:id, which would otherwise try to read "random" as an id.
+app.get("/letters/random", async (c) => {
+  const exclude = Number(c.req.query("exclude"));
+  const id = await getRandomLetterId(c.env.DB, Number.isInteger(exclude) ? exclude : undefined);
+  if (id === null) return c.json({ error: "No letters yet" }, 404);
+  return c.json({ id });
 });
 
 app.get("/letters/:id", async (c) => {

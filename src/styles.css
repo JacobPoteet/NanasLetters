@@ -927,3 +927,104 @@ button {
     padding: 0 24px;
   }
 }
+
+/* Browse's time scrubber (TimeScrubber.tsx): a rail down the right edge that
+   stands in for the whole list. Desktop only — on a narrow screen the sticky
+   year header and the year chips are the navigation, and a touch-sized rail
+   would fight the page's own scrolling. */
+.scrubber {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .scrubber {
+    display: block;
+    position: fixed;
+    top: 110px;
+    bottom: 40px;
+    right: 22px;
+    width: 64px;
+    cursor: ns-resize;
+    touch-action: none;
+    user-select: none;
+    outline: none;
+  }
+
+  .scrubber:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  .scrubber__tick {
+    position: absolute;
+    right: 0;
+    width: 7px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .scrubber__tick--year {
+    width: 14px;
+    background: var(--ink-faint);
+  }
+
+  .scrubber__year {
+    position: absolute;
+    right: 20px;
+    top: -8px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--ink-faint);
+  }
+
+  .scrubber__marker {
+    position: absolute;
+    right: -2px;
+    width: 22px;
+    height: 3px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+
+  .scrubber__tip {
+    position: absolute;
+    right: 32px;
+    transform: translateY(-50%);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font-family: var(--font-serif);
+    font-size: 14px;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 10px rgba(43, 36, 28, 0.08);
+  }
+}
+
+.surprise-more {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.surprise-more__button {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--accent-link);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 24px;
+  cursor: pointer;
+}
+
+.surprise-more__button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
