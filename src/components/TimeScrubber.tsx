@@ -12,7 +12,7 @@ const MONTH_NAMES = [
 const SCROLL_OFFSET = 80;
 
 // Magnification at the pointer is MAGNIFY + 1; the rail ends stay pinned.
-const MAGNIFY = 7;
+const MAGNIFY = 1;
 // Minimum drawn gap between two labels before the later one is dropped.
 const LABEL_GAP = 15;
 // How fast the lens opens and closes, per frame (eased toward its target).
@@ -256,15 +256,15 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
           <span
             key={t.key}
             className={`scrubber__tick${isYear ? " scrubber__tick--year" : ""}${isNearest ? " scrubber__tick--active" : ""}`}
-            style={{ top: `${ys[i]}px`, width: `${(isYear ? 14 : 7) + closeness * 22}px`, opacity: 1 }}
+            style={{ top: `${ys[i]}px`, width: `${(isYear ? 14 : 7) + closeness * 8}px`, opacity: 1 }}
           >
             {showLabel && (
               <span
                 className={`scrubber__label${isYear ? " scrubber__label--year" : ""}`}
                 style={{
-                  opacity: isYear ? 1 : Math.min(1, lens * (0.35 + closeness * 1.4)),
-                  fontSize: `${11 + closeness * 4}px`,
-                  right: `${22 + closeness * 22}px`,
+                  opacity: isYear ? 1 : Math.min(1, lens * (0.5 + closeness)),
+                  fontSize: `${11 + closeness * 1.5}px`,
+                  right: `${22 + closeness * 6}px`,
                 }}
               >
                 {isNearest && !isYear ? `${MONTH_NAMES[t.month - 1]} ${t.year}` : isYear ? t.year : MONTH_NAMES[t.month - 1].slice(0, 3)}
