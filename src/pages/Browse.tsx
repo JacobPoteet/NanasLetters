@@ -7,6 +7,7 @@ import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Link } from "../router";
 import { TimeScrubber } from "../components/TimeScrubber";
+import { BackToTop } from "../components/BackToTop";
 import { CalendarPicker } from "../components/calendar/CalendarPicker";
 import { useDocumentTitle } from "../useDocumentTitle";
 
@@ -184,6 +185,7 @@ export function BrowsePage() {
         </div>
       )}
       {letters && letters.length > 0 && <TimeScrubber listRef={listRef} contentKey={letters} />}
+      <BackToTop />
     </div>
   );
 }
