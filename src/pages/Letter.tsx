@@ -6,7 +6,8 @@ import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
 import { Comments } from "../components/Comments";
-import { Link } from "../router";
+import { openRandomLetter } from "../surprise";
+import { Link, useRouter } from "../router";
 import { useDocumentTitle } from "../useDocumentTitle";
 
 function formatDate(iso: string): string {
@@ -34,6 +35,8 @@ function backToSearch(search: string): { to: string; label: string } | null {
 export function LetterPage({ id, role, search }: { id: number; role: Role; search: string }) {
   const [data, setData] = useState<{ letter: Letter; prevId: number | null; nextId: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { navigate } = useRouter();
+  const surprise = new URLSearchParams(search).get("surprise") === "1";
   const highlightRef = useRef<HTMLParagraphElement | null>(null);
   const highlight = new URLSearchParams(search).get("highlight");
   const commentParam = new URLSearchParams(search).get("comment");
@@ -154,6 +157,14 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
         {prevId ? <Link to={`/letters/${prevId}`}>← Previous letter</Link> : <span />}
         {nextId ? <Link to={`/letters/${nextId}`}>Next letter →</Link> : <span />}
       </div>
+
+      {surprise && (
+        <div className="surprise-more">
+          <button className="surprise-more__button" onClick={() => openRandomLetter(navigate, id)}>
+            Another one ↻
+          </button>
+        </div>
+      )}
 
       <Comments letterId={id} scrollToCommentId={scrollToCommentId} />
     </div>
