@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adjacentTick, clamp01, listFractionAtScroll, pointerFraction, tickAtFraction } from "./timeScrubber";
+import { adjacentTick, clamp01, fisheye, inverseFisheye, listFractionAtScroll, pointerFraction, tickAtFraction } from "./timeScrubber";
 import type { ScrubberTick } from "./timeScrubber";
 
 const ticks: ScrubberTick[] = [
@@ -65,5 +65,39 @@ describe("clamp01", () => {
     expect(clamp01(-2)).toBe(0);
     expect(clamp01(3)).toBe(1);
     expect(clamp01(0.4)).toBe(0.4);
+  });
+});
+
+describe("fisheye", () => {
+  it("is the identity with no magnification", () => {
+    expect(fisheye(120, 300, 600, 0)).toBe(120);
+  });
+
+  it("leaves the focus and both ends of the rail where they are", () => {
+    expect(fisheye(300, 300, 600, 6)).toBeCloseTo(300);
+    expect(fisheye(0, 300, 600, 6)).toBeCloseTo(0);
+    expect(fisheye(600, 300, 600, 6)).toBeCloseTo(600);
+  });
+
+  it("spreads points near the focus apart and stays monotone", () => {
+    const near = fisheye(310, 300, 600, 6) - fisheye(300, 300, 600, 6);
+    expect(near).toBeGreaterThan(10 * 5);
+    let last = -1;
+    for (let x = 0; x <= 600; x += 5) {
+      const y = fisheye(x, 300, 600, 6);
+      expect(y).toBeGreaterThan(last);
+      last = y;
+    }
+  });
+
+  it("handles a focus at either end", () => {
+    expect(fisheye(50, 0, 600, 6)).toBeGreaterThan(50);
+    expect(fisheye(550, 600, 600, 6)).toBeLessThan(550);
+  });
+
+  it("round-trips through its inverse", () => {
+    for (const x of [0, 40, 299, 300, 350, 599]) {
+      expect(inverseFisheye(fisheye(x, 180, 600, 6), 180, 600, 6)).toBeCloseTo(x);
+    }
   });
 });

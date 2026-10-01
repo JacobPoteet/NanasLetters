@@ -45,3 +45,37 @@ export function adjacentTick(ticks: ScrubberTick[], key: string | null, step: -1
   if (i === -1) return ticks[0];
   return ticks[Math.min(ticks.length - 1, Math.max(0, i + step))];
 }
+
+/** Sarkar-Brown fisheye on one side of the focus: t in 0-1 is distance toward the edge, magnified near 0. */
+function stretch(t: number, d: number): number {
+  return ((d + 1) * t) / (d * t + 1);
+}
+
+function unstretch(u: number, d: number): number {
+  return u / (d + 1 - d * u);
+}
+
+/**
+ * Where a rail position (px from the rail's top) is drawn while the rail is
+ * magnified around `focus`. The ends stay pinned, so the whole timeline remains
+ * visible and monotone; only the spacing near the pointer opens up. `d` is the
+ * magnification at the focus minus one; 0 is the identity.
+ */
+export function fisheye(x: number, focus: number, length: number, d: number): number {
+  if (d <= 0 || length <= 0) return x;
+  if (x >= focus) {
+    const span = length - focus;
+    return span <= 0 ? x : focus + span * stretch((x - focus) / span, d);
+  }
+  return focus <= 0 ? x : focus - focus * stretch((focus - x) / focus, d);
+}
+
+/** The rail position drawn at `y` under the same magnification: what the pointer is actually pointing at. */
+export function inverseFisheye(y: number, focus: number, length: number, d: number): number {
+  if (d <= 0 || length <= 0) return y;
+  if (y >= focus) {
+    const span = length - focus;
+    return span <= 0 ? y : focus + span * unstretch((y - focus) / span, d);
+  }
+  return focus <= 0 ? y : focus - focus * unstretch((focus - y) / focus, d);
+}

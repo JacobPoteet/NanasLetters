@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent, RefObject } from "react";
-import { adjacentTick, listFractionAtScroll, pointerFraction, tickAtFraction } from "../../shared/timeScrubber";
+import { adjacentTick, fisheye, inverseFisheye, listFractionAtScroll, tickAtFraction } from "../../shared/timeScrubber";
 import type { ScrubberTick } from "../../shared/timeScrubber";
 
 const MONTH_NAMES = [
@@ -10,6 +10,13 @@ const MONTH_NAMES = [
 
 // Keeps a jumped-to month clear of the sticky year header.
 const SCROLL_OFFSET = 80;
+
+// Magnification at the pointer is MAGNIFY + 1; the rail ends stay pinned.
+const MAGNIFY = 7;
+// Minimum drawn gap between two labels before the later one is dropped.
+const LABEL_GAP = 15;
+// How fast the lens opens and closes, per frame (eased toward its target).
+const LENS_EASE = 0.2;
 
 function label(tick: ScrubberTick | null): string {
   return tick ? `${MONTH_NAMES[tick.month - 1]} ${tick.year}` : "";
@@ -31,9 +38,29 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
   const railRef = useRef<HTMLDivElement | null>(null);
   const [ticks, setTicks] = useState<ScrubberTick[]>([]);
   const [position, setPosition] = useState(0);
-  const [dragFraction, setDragFraction] = useState<number | null>(null);
-  const [hoverFraction, setHoverFraction] = useState<number | null>(null);
+  const [focusY, setFocusY] = useState(0);
+  const [railHeight, setRailHeight] = useState(0);
+  const [lens, setLens] = useState(0);
+  const lensTarget = useRef(0);
+  const lensValue = useRef(0);
+  const lensFrame = useRef(0);
   const dragging = useRef(false);
+
+  // Eases the lens open and shut so the rail swells under the pointer rather than snapping.
+  const animateLens = useCallback(() => {
+    if (lensFrame.current) return;
+    const step = () => {
+      lensFrame.current = 0;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const next = reduced ? lensTarget.current : lensValue.current + (lensTarget.current - lensValue.current) * LENS_EASE;
+      lensValue.current = Math.abs(next - lensTarget.current) < 0.004 ? lensTarget.current : next;
+      setLens(lensValue.current);
+      if (lensValue.current !== lensTarget.current) lensFrame.current = requestAnimationFrame(step);
+    };
+    lensFrame.current = requestAnimationFrame(step);
+  }, []);
+
+  useEffect(() => () => cancelAnimationFrame(lensFrame.current), []);
 
   const measure = useCallback(() => {
     const list = listRef.current;
@@ -62,6 +89,17 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
     observer.observe(list);
     return () => observer.disconnect();
   }, [measure, listRef, contentKey]);
+
+  const hasTicks = ticks.length > 0;
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const read = () => setRailHeight(rail.getBoundingClientRect().height);
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(rail);
+    return () => observer.disconnect();
+  }, [hasTicks]);
 
   useEffect(() => {
     let frame = 0;
@@ -97,30 +135,45 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
     if (el) window.scrollTo({ top: pageTop(el) - SCROLL_OFFSET });
   }
 
+  const focusRef = useRef(0);
+
+  /** The list fraction under the pointer, accounting for the lens's current magnification. */
   function fractionOf(e: PointerEvent) {
     const rect = railRef.current!.getBoundingClientRect();
-    return pointerFraction(e.clientY, rect.top, rect.height);
+    const y = Math.min(rect.height, Math.max(0, e.clientY - rect.top));
+    return inverseFisheye(y, focusRef.current, rect.height, lensValue.current * MAGNIFY) / rect.height;
+  }
+
+  function track(e: PointerEvent) {
+    const rect = railRef.current!.getBoundingClientRect();
+    focusRef.current = Math.min(rect.height, Math.max(0, e.clientY - rect.top));
+    setFocusY(focusRef.current);
+    setRailHeight(rect.height);
+    lensTarget.current = 1;
+    animateLens();
   }
 
   function onPointerDown(e: PointerEvent) {
     dragging.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const f = fractionOf(e);
-    setDragFraction(f);
-    scrollToFraction(f);
+    scrollToFraction(fractionOf(e));
   }
 
   function onPointerMove(e: PointerEvent) {
+    // Resolve the target against the lens as the pointer sees it, then move the lens to the pointer.
     const f = fractionOf(e);
-    setHoverFraction(f);
-    if (!dragging.current) return;
-    setDragFraction(f);
-    scrollToFraction(f);
+    track(e);
+    if (dragging.current) scrollToFraction(f);
   }
 
   function endDrag() {
     dragging.current = false;
-    setDragFraction(null);
+  }
+
+  function onPointerLeave() {
+    if (dragging.current) return;
+    lensTarget.current = 0;
+    animateLens();
   }
 
   const current = tickAtFraction(ticks, position);
@@ -138,8 +191,9 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
 
   if (ticks.length === 0) return null;
 
-  const tipFraction = dragFraction ?? hoverFraction;
-  const tipTick = tipFraction === null ? null : tickAtFraction(ticks, tipFraction);
+  const H = railHeight;
+  const d = lens * MAGNIFY;
+  const drawn = (fraction: number) => fisheye(fraction * H, focusY, H, d);
   const yearStarts = new Set<string>();
   const seenYears = new Set<number>();
   for (const t of ticks) {
@@ -149,10 +203,27 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
     }
   }
 
+  // Years always label; months label only where the lens has opened enough room around them.
+  const placed: number[] = [];
+  const ys = ticks.map((t) => drawn(t.fraction));
+  ticks.forEach((t, i) => yearStarts.has(t.key) && placed.push(ys[i]));
+  const labelled = new Set<string>();
+  if (lens > 0.05) {
+    ticks.forEach((t, i) => {
+      if (yearStarts.has(t.key)) return;
+      if (placed.every((p) => Math.abs(p - ys[i]) >= LABEL_GAP)) {
+        placed.push(ys[i]);
+        labelled.add(t.key);
+      }
+    });
+  }
+  const nearest = lens > 0.05 ? tickAtFraction(ticks, inverseFisheye(focusY, focusY, H, d) / (H || 1)) : null;
+  const markerY = drawn(position);
+
   return (
     <div
       ref={railRef}
-      className="scrubber"
+      className={`scrubber${lens > 0.05 ? " scrubber--lens" : ""}`}
       role="slider"
       tabIndex={0}
       aria-label="Time in the archive"
@@ -163,26 +234,46 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
       aria-valuetext={label(current)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      onPointerLeave={() => setHoverFraction(null)}
+      onPointerUp={(e) => {
+        endDrag();
+        const rect = e.currentTarget.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) onPointerLeave();
+      }}
+      onPointerCancel={() => {
+        endDrag();
+        onPointerLeave();
+      }}
+      onPointerLeave={onPointerLeave}
       onKeyDown={onKeyDown}
     >
-      {ticks.map((t) => (
-        <span
-          key={t.key}
-          className={`scrubber__tick${yearStarts.has(t.key) ? " scrubber__tick--year" : ""}`}
-          style={{ top: `${t.fraction * 100}%` }}
-        >
-          {yearStarts.has(t.key) && <span className="scrubber__year">{t.year}</span>}
-        </span>
-      ))}
-      <span className="scrubber__marker" style={{ top: `${position * 100}%` }} />
-      {tipTick && tipFraction !== null && (
-        <span className="scrubber__tip" style={{ top: `${tipFraction * 100}%` }}>
-          {label(tipTick)}
-        </span>
-      )}
+      {ticks.map((t, i) => {
+        const isYear = yearStarts.has(t.key);
+        // Ticks swell and brighten with their closeness to the pointer, like a dock icon.
+        const closeness = lens * Math.exp(-(((ys[i] - focusY) / 46) ** 2));
+        const isNearest = nearest?.key === t.key;
+        const showLabel = isYear || labelled.has(t.key);
+        return (
+          <span
+            key={t.key}
+            className={`scrubber__tick${isYear ? " scrubber__tick--year" : ""}${isNearest ? " scrubber__tick--active" : ""}`}
+            style={{ top: `${ys[i]}px`, width: `${(isYear ? 14 : 7) + closeness * 22}px`, opacity: 1 }}
+          >
+            {showLabel && (
+              <span
+                className={`scrubber__label${isYear ? " scrubber__label--year" : ""}`}
+                style={{
+                  opacity: isYear ? 1 : Math.min(1, lens * (0.35 + closeness * 1.4)),
+                  fontSize: `${11 + closeness * 4}px`,
+                  right: `${22 + closeness * 22}px`,
+                }}
+              >
+                {isNearest && !isYear ? `${MONTH_NAMES[t.month - 1]} ${t.year}` : isYear ? t.year : MONTH_NAMES[t.month - 1].slice(0, 3)}
+              </span>
+            )}
+          </span>
+        );
+      })}
+      <span className="scrubber__marker" style={{ top: `${markerY}px` }} />
     </div>
   );
 }
