@@ -24,10 +24,15 @@ function formatWeekday(iso: string): string {
 // letter view's back link returns to those exact results instead of always
 // going to Home — see issue #17. Only ever a same-origin /search path is
 // accepted, never an arbitrary redirect target.
-function backToSearch(search: string): { to: string; label: string } | null {
+// Browse links here with ?from=/browse; the back link then re-seeds Browse's
+// scroll anchor with this letter, since a fresh push has no history state.
+function backTarget(search: string, id: number): { to: string; label: string; state?: object } | null {
   const from = new URLSearchParams(search).get("from");
   if (from && /^\/search(?:\?.*)?$/.test(from)) {
     return { to: from, label: "← Back to search results" };
+  }
+  if (from === "/browse") {
+    return { to: from, label: "← Back to browse", state: { browseAnchor: id } };
   }
   return null;
 }
@@ -65,13 +70,14 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
   if (!data) return <div className="content">Loading…</div>;
 
   const { letter, prevId, nextId } = data;
-  const back = backToSearch(search);
+  const back = backTarget(search, id);
+  const fromQuery = new URLSearchParams(search).get("from") === "/browse" ? "?from=/browse" : "";
   const paragraphs = paragraphsWithHighlight(letter.text, highlight);
 
   return (
     <div className="content content--narrow">
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <Link to={back?.to ?? "/"}>{back?.label ?? "← On this day"}</Link>
+        <Link to={back?.to ?? "/"} state={back?.state}>{back?.label ?? "← On this day"}</Link>
         {role === "admin" && <Link to={`/admin/letters/${id}`}>Edit</Link>}
       </div>
 
@@ -154,8 +160,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
       )}
 
       <div className="letter-nav">
-        {prevId ? <Link to={`/letters/${prevId}`}>← Previous letter</Link> : <span />}
-        {nextId ? <Link to={`/letters/${nextId}`}>Next letter →</Link> : <span />}
+        {prevId ? <Link to={`/letters/${prevId}${fromQuery}`}>← Previous letter</Link> : <span />}
+        {nextId ? <Link to={`/letters/${nextId}${fromQuery}`}>Next letter →</Link> : <span />}
       </div>
 
       {surprise && (

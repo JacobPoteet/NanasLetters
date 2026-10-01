@@ -9,7 +9,7 @@ interface RouterState {
   path: string;
   /** window.location.search for the current path, including the leading "?" (or "" if none). */
   search: string;
-  navigate: (to: string, options?: { replace?: boolean }) => void;
+  navigate: (to: string, options?: { replace?: boolean; state?: object }) => void;
 }
 
 const RouterContext = createContext<RouterState | null>(null);
@@ -32,12 +32,12 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
+  const navigate = useCallback((to: string, options?: { replace?: boolean; state?: object }) => {
     const safeTo = resolveInternalPath(to, window.location.origin);
     if (options?.replace) {
       window.history.replaceState(null, "", safeTo);
     } else {
-      window.history.pushState(null, "", safeTo);
+      window.history.pushState(options?.state ?? null, "", safeTo);
     }
     const [newPath, newSearch] = splitPath(safeTo);
     setPath(newPath);
@@ -53,7 +53,17 @@ export function useRouter(): RouterState {
   return ctx;
 }
 
-export function Link({ to, children, className }: { to: string; children: ReactNode; className?: string }) {
+export function Link({
+  to,
+  children,
+  className,
+  state,
+}: {
+  to: string;
+  children: ReactNode;
+  className?: string;
+  state?: object;
+}) {
   const { navigate } = useRouter();
   const safeTo = resolveInternalPath(to, window.location.origin);
   return (
@@ -63,7 +73,7 @@ export function Link({ to, children, className }: { to: string; children: ReactN
       onClick={(e: MouseEvent) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        navigate(safeTo);
+        navigate(safeTo, { state });
       }}
     >
       {children}

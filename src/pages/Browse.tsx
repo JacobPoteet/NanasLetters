@@ -170,7 +170,7 @@ export function BrowsePage() {
                       <div className="letter-card__date">{formatShortDate(letter.date)}</div>
                       <div className="letter-card__body">
                         <div className="letter-card__excerpt">"{letter.excerpt}"</div>
-                        <Link to={`/letters/${letter.id}`} className="letter-card__link">
+                        <Link to={`/letters/${letter.id}?from=/browse`} className="letter-card__link">
                           Read the letter →
                         </Link>
                       </div>
