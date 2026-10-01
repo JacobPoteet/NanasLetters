@@ -151,7 +151,7 @@ export function AdminPage() {
   const [items, setItems] = useState<ReviewQueueItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useDocumentTitle(pageTitle("Review queue"));
+  useDocumentTitle(pageTitle("Dashboard"));
 
   useEffect(() => {
     fetchQueue().then(setItems).catch((err) => setError(err.message));
@@ -163,7 +163,7 @@ export function AdminPage() {
 
   return (
     <div className="content" style={{ maxWidth: 900, fontFamily: "system-ui, sans-serif" }}>
-      <h1>Review queue</h1>
+      <h1>Dashboard</h1>
       {error && <div className="error-text">{error}</div>}
       {!items ? (
         <p>Loading…</p>

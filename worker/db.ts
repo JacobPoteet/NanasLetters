@@ -1,7 +1,6 @@
 import type {
   AdminCalendarSummary,
   AdminComment,
-  AnalyticsDay,
   AnalyticsPage,
   AnalyticsSummary,
   ArchiveStats,
@@ -18,7 +17,8 @@ import type {
   SearchResult,
   SearchSort,
 } from "../shared/types";
-import { nearbyMonthDays } from "./dateWindow";
+import { nearbyMonthDays, familyDay, shiftDate } from "./dateWindow";
+import { bucketVisitsByDay, countNewDevicesOn } from "./analyticsDays";
 import {
   buildFtsQuery,
   escapeAndMarkSnippet,
@@ -100,7 +100,7 @@ export async function getArchiveStats(db: D1Database): Promise<ArchiveStats> {
       .first<{ total: number; firstDate: string | null; lastDate: string | null }>(),
     db.prepare("SELECT id FROM letters ORDER BY date ASC, id ASC LIMIT 1").first<{ id: number }>(),
   ]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = familyDay();
   return {
     totalLetters: totals?.total ?? 0,
     firstDate: totals?.firstDate ?? today,
@@ -475,34 +475,27 @@ export async function recordVisit(
 const ANALYTICS_WINDOW_DAYS = 30;
 
 export async function getAnalyticsSummary(db: D1Database): Promise<AnalyticsSummary> {
-  const [totals, homeInWindow, newToday, daily, mostReadRows] = await Promise.all([
+  const today = familyDay();
+  const sinceDay = shiftDate(today, -ANALYTICS_WINDOW_DAYS);
+  // Fetched with a day of slack either side so the family-time bucketing in JS
+  // never misses rows that sit on a UTC-day boundary.
+  const sinceUtc = shiftDate(today, -ANALYTICS_WINDOW_DAYS - 1);
+  const [totals, homeRows, firstSeen, windowRows, mostReadRows] = await Promise.all([
     db.prepare("SELECT count(*) as visits, count(distinct device_id) as devices FROM analytics_visits").first<{
       visits: number;
       devices: number;
     }>(),
     db
-      .prepare(
-        `SELECT count(*) as c FROM analytics_visits
-         WHERE page = 'home' AND visit_day >= date('now', ?1)`,
-      )
-      .bind(`-${ANALYTICS_WINDOW_DAYS} days`)
-      .first<{ c: number }>(),
+      .prepare("SELECT created_at FROM analytics_visits WHERE page = 'home' AND visit_day >= ?1")
+      .bind(sinceUtc)
+      .all<{ created_at: string }>(),
     db
-      .prepare(
-        `SELECT count(*) as c FROM (
-           SELECT device_id, min(visit_day) as first_day FROM analytics_visits GROUP BY device_id
-         ) WHERE first_day = date('now')`,
-      )
-      .first<{ c: number }>(),
+      .prepare("SELECT min(created_at) as first_at FROM analytics_visits GROUP BY device_id")
+      .all<{ first_at: string }>(),
     db
-      .prepare(
-        `SELECT visit_day as day, count(*) as visits, count(distinct device_id) as devices
-         FROM analytics_visits
-         WHERE visit_day >= date('now', ?1)
-         GROUP BY visit_day ORDER BY visit_day ASC`,
-      )
-      .bind(`-${ANALYTICS_WINDOW_DAYS} days`)
-      .all<AnalyticsDay>(),
+      .prepare("SELECT created_at, device_id FROM analytics_visits WHERE visit_day >= ?1")
+      .bind(sinceUtc)
+      .all<{ created_at: string; device_id: string }>(),
     db
       .prepare(
         `SELECT av.letter_id as letterId, l.date as date, l.text as text, count(*) as reads
@@ -512,6 +505,11 @@ export async function getAnalyticsSummary(db: D1Database): Promise<AnalyticsSumm
       )
       .all<{ letterId: number; date: string; text: string; reads: number }>(),
   ]);
+  const daily = bucketVisitsByDay(windowRows.results ?? [], sinceDay);
+  const homeInWindow = bucketVisitsByDay(
+    (homeRows.results ?? []).map((r) => ({ ...r, device_id: "" })),
+    sinceDay,
+  ).reduce((n, d) => n + d.visits, 0);
 
   const mostRead: MostReadLetter[] = (mostReadRows.results ?? []).map((r) => ({
     letterId: r.letterId,
@@ -524,9 +522,9 @@ export async function getAnalyticsSummary(db: D1Database): Promise<AnalyticsSumm
     windowDays: ANALYTICS_WINDOW_DAYS,
     totalVisits: totals?.visits ?? 0,
     totalDevices: totals?.devices ?? 0,
-    homeVisitsInWindow: homeInWindow?.c ?? 0,
-    newDevicesToday: newToday?.c ?? 0,
-    daily: daily.results ?? [],
+    homeVisitsInWindow: homeInWindow,
+    newDevicesToday: countNewDevicesOn(firstSeen.results ?? [], today),
+    daily,
     mostRead,
   };
 }
@@ -548,8 +546,8 @@ export async function getCalendarSummary(db: D1Database): Promise<AdminCalendarS
   }
 
   return {
-    archiveStart: span?.archiveStart ?? new Date().toISOString().slice(0, 10),
-    today: new Date().toISOString().slice(0, 10),
+    archiveStart: span?.archiveStart ?? familyDay(),
+    today: familyDay(),
     lettersByDate,
     pendingReviewDates: (reviewRows.results ?? []).map((r) => r.received_date),
   };

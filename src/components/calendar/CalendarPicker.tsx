@@ -18,7 +18,7 @@ const MONTH_NAMES = [
 const YEARS_PER_PAGE = 12;
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("en-CA");
 }
 
 function clamp(n: number, min: number, max: number): number {

@@ -21,8 +21,9 @@ describe("nearbyMonthDays", () => {
 
 describe("todayMonthDay", () => {
   it("formats a date as zero-padded MM-DD", () => {
-    expect(todayMonthDay(new Date(Date.UTC(2026, 0, 5)))).toBe("01-05");
-    expect(todayMonthDay(new Date(Date.UTC(2026, 8, 27)))).toBe("09-27");
+    expect(todayMonthDay(new Date(Date.UTC(2026, 0, 5, 12)))).toBe("01-05");
+    expect(todayMonthDay(new Date(Date.UTC(2026, 8, 27, 12)))).toBe("09-27");
+    expect(todayMonthDay(new Date(Date.UTC(2026, 9, 1, 1)))).toBe("09-30");
   });
 });
 
