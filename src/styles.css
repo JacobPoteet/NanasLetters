@@ -943,7 +943,7 @@ button {
     top: 110px;
     bottom: 40px;
     right: 22px;
-    width: 64px;
+    width: 110px;
     cursor: ns-resize;
     touch-action: none;
     user-select: none;
@@ -965,18 +965,37 @@ button {
   }
 
   .scrubber__tick--year {
-    width: 14px;
     background: var(--ink-faint);
   }
 
-  .scrubber__year {
+  .scrubber--lens .scrubber__tick {
+    background: var(--ink-faint);
+  }
+
+  .scrubber__tick--active {
+    height: 2px;
+    margin-top: -0.5px;
+    background: var(--accent) !important;
+  }
+
+  .scrubber__label {
     position: absolute;
-    right: 20px;
-    top: -8px;
+    top: 50%;
+    transform: translateY(-50%);
     font-family: var(--font-sans);
-    font-size: 11px;
     line-height: 16px;
     color: var(--ink-faint);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .scrubber__label--year {
+    color: var(--ink-faint);
+  }
+
+  .scrubber__tick--active .scrubber__label {
+    color: var(--ink);
+    font-family: var(--font-serif);
   }
 
   .scrubber__marker {
@@ -988,22 +1007,6 @@ button {
     border-radius: 2px;
     background: var(--accent);
     pointer-events: none;
-  }
-
-  .scrubber__tip {
-    position: absolute;
-    right: 32px;
-    transform: translateY(-50%);
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--bg);
-    font-family: var(--font-serif);
-    font-size: 14px;
-    color: var(--ink);
-    white-space: nowrap;
-    pointer-events: none;
-    box-shadow: 0 2px 10px rgba(43, 36, 28, 0.08);
   }
 }
 
@@ -1027,4 +1030,114 @@ button {
 .surprise-more__button:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Quiet motion, applied as one layer so it can be tuned or removed in one
+   place. Everything here eases slowly and settles; nothing bounces, and the
+   whole block steps aside for prefers-reduced-motion. Page and paragraph
+   entrances animate opacity (and, on paragraphs, a few pixels of rise) with
+   no persisted transform, so they never become a containing block for the
+   scrubber's position: fixed or Browse's sticky year headers. */
+::selection {
+  background: rgba(176, 82, 45, 0.22);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  a,
+  .header__nav button,
+  .browse-year-filter__chip,
+  .surprise-more__button,
+  .calendar-picker__trigger {
+    transition:
+      color 0.35s var(--ease-calm),
+      background-color 0.35s var(--ease-calm),
+      border-color 0.35s var(--ease-calm),
+      text-decoration-color 0.35s var(--ease-calm);
+  }
+
+  a {
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+  }
+
+  a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .header__nav a:hover,
+  .header__nav button:hover {
+    color: var(--ink);
+  }
+
+  .header__wordmark {
+    transition: color 0.35s var(--ease-calm);
+  }
+
+  .header__wordmark:hover {
+    color: var(--accent);
+  }
+
+  /* Each page fades in rather than cutting. */
+  .content {
+    animation: page-in 0.7s var(--ease-calm);
+  }
+
+  /* A letter opens like a page being turned to: the date first, then each
+     paragraph a breath after the last. Capped so a long letter isn't kept
+     waiting. */
+  .letter-body p {
+    animation: paragraph-in 0.9s var(--ease-calm) backwards;
+  }
+
+  .letter-body p:nth-child(1) { animation-delay: 0.15s; }
+  .letter-body p:nth-child(2) { animation-delay: 0.3s; }
+  .letter-body p:nth-child(3) { animation-delay: 0.45s; }
+  .letter-body p:nth-child(4) { animation-delay: 0.6s; }
+  .letter-body p:nth-child(n + 5) { animation-delay: 0.7s; }
+
+  .letter-card__body,
+  .letter-card__year,
+  .letter-card__date {
+    transition:
+      transform 0.5s var(--ease-calm),
+      color 0.35s var(--ease-calm);
+  }
+
+  .letter-card:hover .letter-card__body {
+    transform: translateX(5px);
+  }
+
+  .letter-card:hover .letter-card__date {
+    color: var(--accent);
+  }
+
+  .letter-photo {
+    transition: opacity 0.6s var(--ease-calm);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes paragraph-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
