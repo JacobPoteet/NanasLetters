@@ -437,6 +437,27 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
+/* The letter a reader just came back to from its full view (BrowsePage's
+   history-state anchor): a warm wash that fades, so the eye finds its place. */
+.letter-card {
+  scroll-margin-top: 96px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .letter-card--returned {
+    animation: letter-card-returned 2.4s ease-out;
+  }
+}
+
+@keyframes letter-card-returned {
+  from {
+    background: rgba(176, 82, 45, 0.14);
+  }
+  to {
+    background: transparent;
+  }
+}
+
 .browse-month-label {
   font-size: 13px;
   font-weight: 600;

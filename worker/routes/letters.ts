@@ -8,6 +8,8 @@ import type { SearchSort } from "../../shared/types";
 
 const SEARCH_SORTS: SearchSort[] = ["relevance", "newest", "oldest"];
 
+const MAX_BROWSE_LIMIT = 10000;
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.get("/stats", async (c) => {
@@ -25,7 +27,12 @@ app.get("/letters", async (c) => {
   const month = c.req.query("month");
   const beforeDate = c.req.query("beforeDate");
   const beforeId = c.req.query("beforeId");
+  const limitParam = Number(c.req.query("limit"));
+  // Browse loads the whole archive as light cards in one request (see
+  // BrowsePage); the cap is a guard, not a page size.
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, MAX_BROWSE_LIMIT) : undefined;
   const letters = await browseLetters(c.env.DB, {
+    limit,
     year: year ? Number(year) : undefined,
     month: month ? Number(month) : undefined,
     before: beforeDate && beforeId ? { date: beforeDate, id: Number(beforeId) } : undefined,
