@@ -17,6 +17,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply nanas-letters-db --remote",
     "db:seed": "wrangler d1 execute nanas-letters-db --local --file=seed/seed.sql",
     "db:export:remote": "tsx scripts/db-export.ts",
+    "archive": "tsx scripts/archive.ts",
     "backfill:import": "tsx scripts/import-mbox.ts",
     "admin": "node scripts/open-admin.mjs"
   },

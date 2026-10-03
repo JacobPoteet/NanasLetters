@@ -101,6 +101,7 @@ npm run db:migrate         # apply migrations to LOCAL db
 npm run db:migrate:remote  # apply migrations to PROD db
 npm run db:seed            # seed LOCAL db only — bootstrap/dev-fixture data, never real letters
 npm run db:export:remote   # dump PROD db → gitignored backups/ dir. Run before any prod DB work
+npm run archive            # read-only prod export → gitignored archives/ dir: per-letter .txt, all-letters.txt, JSON, photos, checksums
 ```
 
 Do not let `npm test` silently mean "the fast subset." One command, no flags, runs everything CI runs.

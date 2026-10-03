@@ -16,3 +16,6 @@ backups/
 # Generated from it by scripts/import-mbox.ts — also real letter text.
 /backfill/
 
+
+# Human-readable archive exports from `npm run archive` — real letter text.
+archives/
