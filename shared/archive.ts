@@ -137,6 +137,7 @@ export function buildReadme(opts: {
   lastDate: string;
   commentCount: number;
   photoCount: number;
+  hasPdf: boolean;
 }): string {
   return `Nana's Letters - archive
 =========================
@@ -150,9 +151,13 @@ software.
 
 What is here
 ------------
-letters/            One plain-text file per letter, named by date. Open with
+index.html          Start here. Open it in any web browser: no internet, no
+                    login. On this day, browse by year, and search the words.
+epub/               One e-book per year, for a phone, tablet or e-reader.
+${opts.hasPdf ? "pdf/                One PDF per year, laid out like a book, for printing.\n" : ""}letters/            One plain-text file per letter, named by date. Open with
                     any text editor.
 all-letters.txt     Every letter in one file, oldest first. Handy for searching.
+reader/             The pieces index.html needs. Leave this folder next to it.
 photos/             Photos attached to letters, named by letter date.
 data/letters.json   The same content as structured data (UTF-8 JSON), for
                     anyone who wants to build something from it.

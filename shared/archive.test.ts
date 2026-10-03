@@ -98,7 +98,7 @@ describe("formatChecksums", () => {
 
 describe("buildReadme", () => {
   it("states the counts and date range", () => {
-    const r = buildReadme({ generatedAt: "x", letterCount: 5, firstDate: "2018-02-06", lastDate: "2026-09-27", commentCount: 2, photoCount: 1 });
+    const r = buildReadme({ generatedAt: "x", letterCount: 5, firstDate: "2018-02-06", lastDate: "2026-09-27", commentCount: 2, photoCount: 1, hasPdf: true });
     expect(r).toContain("5 letters, 2018-02-06 through 2026-09-27, with 2 family comments and 1 photos.");
   });
 });
