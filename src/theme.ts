@@ -41,6 +41,13 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
 
   function toggle() {
     const next = oppositeTheme(theme);
+    // Colors drift over ~1s instead of cutting. The class exists only for the
+    // length of the change so it never taxes ordinary hovers or scrolling.
+    const root = document.documentElement;
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.classList.add("theme-fading");
+      window.setTimeout(() => root.classList.remove("theme-fading"), 1100);
+    }
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
