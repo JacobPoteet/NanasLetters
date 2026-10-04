@@ -4,7 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Daily</title>
-    <meta name="theme-color" content="#B0522D" />
+    <meta name="theme-color" content="#F6F1E7" />
+    <script>
+      // Runs before first paint so a dark-mode reader never sees a light flash.
+      // Mirrors shared/theme.ts (resolveTheme); keep the two in step.
+      (function () {
+        var theme;
+        try {
+          var stored = localStorage.getItem("nanas-letters-theme");
+          if (stored === "light" || stored === "dark") theme = stored;
+        } catch (e) {}
+        if (!theme) theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", theme);
+        if (theme === "dark") {
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", "#1C1814");
+        }
+      })();
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
