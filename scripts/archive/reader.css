@@ -20,7 +20,7 @@ body {
 a { color: var(--link); }
 .masthead, main, .foot { max-width: 44rem; margin: 0 auto; padding: 0 1rem; }
 .masthead { display: flex; justify-content: space-between; align-items: baseline; padding-top: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--rule); font-family: "Work Sans", system-ui, sans-serif; }
-.brand { font-family: inherit; font-size: 1.5rem; text-decoration: none; color: var(--ink); font-family: "Source Serif 4", Georgia, serif; }
+.brand { font-size: 1.5rem; text-decoration: none; color: var(--ink); font-family: "Source Serif 4", Georgia, serif; }
 .masthead nav { display: flex; gap: 1.25rem; font-size: 0.9rem; }
 .masthead nav a { text-decoration: none; }
 .masthead nav a:hover { text-decoration: underline; }

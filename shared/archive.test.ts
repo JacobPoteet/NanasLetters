@@ -19,8 +19,9 @@ const letter: ArchiveLetter = {
   meditationUrl: "https://cac.org/daily-meditations/an-influential-teacher/",
   photos: [{ r2Key: "k", mimeType: "image/jpeg", caption: "The tree", file: "photos/2023-12-24-1.jpg" }],
   comments: [
-    { authorName: "Jacob", body: "Love this.\n", createdAt: "2023-12-25 08:00:00" },
-    { authorName: null, body: "Merry Christmas", createdAt: "2023-12-25 09:00:00" },
+    { authorName: "Jacob", body: "Love this.\n", createdAt: "2023-12-25 13:00:00", day: "2023-12-25" },
+    // Posted the evening of the 25th Eastern; UTC has already rolled over to the 26th.
+    { authorName: null, body: "Merry Christmas", createdAt: "2023-12-26 02:00:00", day: "2023-12-25" },
   ],
   file: "letters/2023-12-24.txt",
 };
@@ -45,8 +46,17 @@ describe("photos", () => {
     expect(photoExtension("image/JPEG")).toBe("jpg");
     expect(photoExtension("application/x-weird")).toBe("bin");
   });
-  it("names photos by date and 1-based index", () => {
-    expect(photoFileName("2023-12-24", 1, "image/png")).toBe("photos/2023-12-24-2.png");
+  it("names photos by the letter's file and 1-based index", () => {
+    expect(photoFileName("letters/2023-12-24.txt", 1, "image/png")).toBe("photos/2023-12-24-2.png");
+  });
+  it("gives two letters on the same date distinct photo paths", () => {
+    const [first, second] = assignFileNames([
+      { id: 1, date: "2020-01-01" },
+      { id: 2, date: "2020-01-01" },
+    ]);
+    const a = photoFileName(first.file, 0, "image/jpeg");
+    const b = photoFileName(second.file, 0, "image/jpeg");
+    expect([a, b]).toEqual(["photos/2020-01-01-1.jpg", "photos/2020-01-01-2-1.jpg"]);
   });
 });
 
@@ -61,6 +71,7 @@ describe("formatLetterText", () => {
     expect(out).toContain("[Photo: photos/2023-12-24-1.jpg - The tree]");
     expect(out).toContain("Jacob, 2023-12-25:\nLove this.");
     expect(out).toContain("A family member, 2023-12-25:\nMerry Christmas");
+    expect(out).not.toContain("2023-12-26");
   });
   it("ends with exactly one newline", () => {
     expect(out.endsWith("Merry Christmas\n")).toBe(true);

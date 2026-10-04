@@ -9,12 +9,14 @@
 //
 // Formats and their pure folds live in shared/archive*.ts. The PDFs need a
 // locally installed Chrome/Edge (see scripts/lib/pdf.ts); without one they're
-// skipped with a warning, as they are with --no-pdf. Re-runnable: each
-// run is stamped with its own date, so successive archives sit side by side.
+// skipped with a warning, as they are with --no-pdf. Each run is stamped with
+// its date and refuses to write into a folder that already exists, so archives
+// from different days sit side by side and a same-day rerun can't leave a
+// previous run's stale files mixed in (and covered by the checksums).
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { buildSync } from "esbuild";
 import { zipSync } from "fflate";
@@ -35,6 +37,7 @@ import { buildYearEpub } from "../shared/archiveEpub";
 import { groupByYearMonth } from "../shared/archiveMarkup";
 import { buildYearPrintHtml } from "../shared/archivePrint";
 import { buildReaderDataJs, buildReaderHtml } from "../shared/archiveReader";
+import { familyDayFromSqlite } from "../worker/dateWindow";
 
 const PHOTO_BUCKET = "nanas-letters-photos";
 
@@ -76,6 +79,9 @@ function listFiles(dir: string): string[] {
 
 const generatedAt = new Date().toISOString();
 const outDir = join("archives", `NanasLetters-Archive-${generatedAt.slice(0, 10)}`);
+if (existsSync(outDir)) {
+  throw new Error(`${outDir} already exists. Move or delete it first; this script never overwrites an earlier archive.`);
+}
 
 console.log("Reading letters, photos and comments from prod...");
 const letterRows = queryRemote<LetterRow>("SELECT id, date, text, meditation_title, meditation_url FROM letters");
@@ -102,10 +108,15 @@ const letters: ArchiveLetter[] = assignFileNames(letterRows).map((row) => ({
     r2Key: p.r2_key,
     mimeType: p.mime_type,
     caption: p.caption,
-    file: photoFileName(row.date, i, p.mime_type),
+    file: photoFileName(row.file, i, p.mime_type),
   })),
   comments: (commentsByLetter.get(row.id) ?? []).map(
-    (c): ArchiveComment => ({ authorName: c.author_name, body: c.body, createdAt: c.created_at }),
+    (c): ArchiveComment => ({
+      authorName: c.author_name,
+      body: c.body,
+      createdAt: c.created_at,
+      day: familyDayFromSqlite(c.created_at),
+    }),
   ),
 }));
 

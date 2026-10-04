@@ -3,7 +3,7 @@
 // fetch() and module scripts — so the data ships as a classic <script> that
 // assigns window.ARCHIVE, and the app code is one bundled classic script.
 
-import type { ArchiveLetter } from "./archive";
+import { letterKey, type ArchiveLetter } from "./archive";
 import { escapeHtml } from "./archiveMarkup";
 
 export interface ReaderLetter {
@@ -13,12 +13,7 @@ export interface ReaderLetter {
   meditationTitle: string | null;
   meditationUrl: string | null;
   photos: { file: string; caption: string | null }[];
-  comments: { authorName: string | null; body: string; createdAt: string }[];
-}
-
-/** The letter's route key: its text file's name without folder or extension. */
-export function letterKey(letter: Pick<ArchiveLetter, "file">): string {
-  return letter.file.replace(/^letters\//, "").replace(/\.txt$/, "");
+  comments: { authorName: string | null; body: string; createdAt: string; day: string }[];
 }
 
 export function buildReaderDataJs(letters: ArchiveLetter[], generatedAt: string): string {

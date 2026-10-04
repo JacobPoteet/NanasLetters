@@ -40,7 +40,7 @@ function letterBlock(letter: ArchiveLetter): string {
       `<div class="comments">${letter.comments
         .map(
           (c) =>
-            `<p class="by"><em>${escapeHtml(c.authorName?.trim() || "A family member")}, ${escapeHtml(c.createdAt.slice(0, 10))}</em></p>${paragraphsHtml(c.body)}`,
+            `<p class="by"><em>${escapeHtml(c.authorName?.trim() || "A family member")}, ${escapeHtml(c.day)}</em></p>${paragraphsHtml(c.body)}`,
         )
         .join("")}</div>`,
     );

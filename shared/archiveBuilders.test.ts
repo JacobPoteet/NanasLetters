@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildReadme, type ArchiveLetter } from "./archive";
+import { buildReadme, letterKey, type ArchiveLetter } from "./archive";
 import { buildYearEpub } from "./archiveEpub";
 import { buildYearPrintHtml } from "./archivePrint";
-import { buildReaderDataJs, buildReaderHtml, letterKey } from "./archiveReader";
+import { buildReaderDataJs, buildReaderHtml } from "./archiveReader";
 
 const letter = (date: string, extra: Partial<ArchiveLetter> = {}): ArchiveLetter => ({
   id: 1,
@@ -18,7 +18,7 @@ const letter = (date: string, extra: Partial<ArchiveLetter> = {}): ArchiveLetter
 
 const withPhotoAndComment = letter("2023-12-24", {
   photos: [{ r2Key: "k", mimeType: "image/jpeg", caption: 'The "tree"', file: "photos/2023-12-24-1.jpg" }],
-  comments: [{ authorName: null, body: "Love it", createdAt: "2023-12-25 08:00:00" }],
+  comments: [{ authorName: null, body: "Love it", createdAt: "2023-12-25 13:00:00", day: "2023-12-25" }],
 });
 
 describe("buildYearEpub", () => {

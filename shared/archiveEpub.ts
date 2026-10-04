@@ -61,7 +61,7 @@ function letterHtml(letter: ArchiveLetter): string {
   if (letter.comments.length > 0) {
     const blocks = letter.comments.map(
       (c) =>
-        `<p class="comment-by"><em>${escapeHtml(c.authorName?.trim() || "A family member")}, ${escapeHtml(c.createdAt.slice(0, 10))}</em></p>\n${paragraphsHtml(c.body)}`,
+        `<p class="comment-by"><em>${escapeHtml(c.authorName?.trim() || "A family member")}, ${escapeHtml(c.day)}</em></p>\n${paragraphsHtml(c.body)}`,
     );
     parts.push(`<div class="comments">\n${blocks.join("\n")}\n</div>`);
   }

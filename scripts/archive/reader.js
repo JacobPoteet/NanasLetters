@@ -160,7 +160,7 @@ function letterView(key) {
         { class: "comments" },
         h("h2", null, "Comments"),
         l.comments.map((c) =>
-          h("div", { class: "comment" }, h("p", { class: "muted" }, `${c.authorName?.trim() || "A family member"}, ${c.createdAt.slice(0, 10)}`), h("p", null, c.body)),
+          h("div", { class: "comment" }, h("p", { class: "muted" }, `${c.authorName?.trim() || "A family member"}, ${c.day}`), h("p", null, c.body)),
         ),
       ),
     h(
@@ -181,9 +181,44 @@ function render() {
   else if (parts[0] === "letter" && parts[1]) view = letterView(decodeURIComponent(parts[1]));
   else view = onThisDayView();
   app.replaceChildren(view);
-  window.scrollTo(0, 0);
+  // A fresh link starts at the top; Back lands where the reader left that page
+  // (e.g. partway down a year in Browse), the way the live site's Browse does.
+  window.scrollTo(0, history.state?.scrollY ?? 0);
   document.title = `${parts[0] === "letter" && parts[1] ? parts[1] : "The Daily"} - Nana's Letters archive`;
 }
 
-window.addEventListener("hashchange", render);
+// Each history entry remembers its own scroll position: saved at the moment a
+// link is followed, and on scroll as a fallback for the browser's own Back and
+// Forward. Some browsers restrict history state on file:// pages; then pages
+// simply open at the top.
+let saveTimer;
+function saveScrollNow() {
+  clearTimeout(saveTimer);
+  try {
+    history.replaceState({ scrollY: window.scrollY }, "");
+  } catch {
+    // Not allowed here; the reader still works, it just doesn't restore position.
+  }
+}
+
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+document.addEventListener(
+  "click",
+  (e) => {
+    if (e.target.closest?.('a[href^="#"]')) saveScrollNow();
+  },
+  true,
+);
+window.addEventListener(
+  "scroll",
+  () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveScrollNow, 100);
+  },
+  { passive: true },
+);
+window.addEventListener("hashchange", () => {
+  clearTimeout(saveTimer);
+  render();
+});
 render();

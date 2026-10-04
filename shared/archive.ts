@@ -2,10 +2,15 @@
 // contents out. Kept apart from the script so every format decision is unit
 // tested without touching Wrangler, R2, or the disk.
 
+import { longDate } from "./archiveMarkup";
+
 export interface ArchiveComment {
   authorName: string | null;
   body: string;
+  /** SQLite UTC timestamp, as stored. */
   createdAt: string;
+  /** The calendar day it was posted in the family's time zone (YYYY-MM-DD) — what the archive shows. */
+  day: string;
 }
 
 export interface ArchivePhoto {
@@ -55,24 +60,22 @@ export function assignFileNames<T extends { id: number; date: string }>(letters:
   });
 }
 
-export function photoFileName(date: string, index: number, mimeType: string): string {
-  return `photos/${date}-${index + 1}.${photoExtension(mimeType)}`;
+/** A letter's stable key: its text file's name without folder or extension (e.g. 2020-01-01-2). */
+export function letterKey(letter: Pick<ArchiveLetter, "file">): string {
+  return letter.file.replace(/^letters\//, "").replace(/\.txt$/, "");
 }
 
-function longDate(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+/**
+ * Named after the letter's key, not its date, so photos from two letters on
+ * the same day can't land on the same path.
+ */
+export function photoFileName(letterFile: string, index: number, mimeType: string): string {
+  return `photos/${letterKey({ file: letterFile })}-${index + 1}.${photoExtension(mimeType)}`;
 }
 
 function commentBlock(c: ArchiveComment): string {
   const who = c.authorName?.trim() || "A family member";
-  return `${who}, ${c.createdAt.slice(0, 10)}:\n${c.body.trim()}`;
+  return `${who}, ${c.day}:\n${c.body.trim()}`;
 }
 
 /** One letter as a standalone, human-readable text file. */
