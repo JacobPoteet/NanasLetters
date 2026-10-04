@@ -11,38 +11,15 @@
 // (fts5)". Instead this reuses the same plain-SELECT-then-INSERT approach as
 // the Worker's own backup (worker/backup.ts's BACKUP_TABLES/buildBackupSql),
 // one `wrangler d1 execute --json` call per real table, which never touches
-// the virtual table at all.
+// the virtual table at all. (The wrangler-shelling details live in
+// scripts/lib/d1.ts, shared with scripts/archive.ts.)
 
-import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { queryRemote } from "./lib/d1";
 import { BACKUP_TABLES, buildBackupSql, type TableDump } from "../worker/backup";
 
-// `npx` resolves to `npx.cmd` on Windows, a batch file Node can only launch
-// through a shell (`shell: true`) — even naming `npx.cmd` explicitly still
-// fails (spawnSync EINVAL) without it. `--file` instead of `--command` was
-// tried to sidestep the quoting question entirely, but wrangler treats a
-// `--file` execution as a batch import: it returns summary stats ("Rows
-// read", "Database size"), never the actual row data, so it's unusable here.
-//
-// With `shell: true`, Node joins [file, ...args] into one string for cmd.exe
-// without quoting anything itself (confirmed: an unquoted multi-word SQL
-// string got split into separate positional args) — so the SQL argument is
-// quoted here, by hand, before it reaches the array. Safe to do plainly
-// (no escaping beyond the wrapping quotes) because every value passed
-// through this path is one of the fixed, hardcoded SELECT statements built
-// from BACKUP_TABLES below — never anything derived from user input.
 function queryTable(table: string, columns: string[]): Record<string, unknown>[] {
-  const sql = `SELECT ${columns.join(", ")} FROM ${table}`;
-  const output = execFileSync(
-    "npx",
-    ["wrangler", "d1", "execute", "nanas-letters-db", "--remote", "--json", "--command", `"${sql}"`],
-    // `letters` alone is already past Node's 1MB default maxBuffer once every
-    // letter's full text comes back in one JSON blob — this whole database
-    // is still nowhere near 100MB, so there's plenty of headroom here.
-    { encoding: "utf8", shell: true, maxBuffer: 100 * 1024 * 1024 },
-  );
-  const [result] = JSON.parse(output) as { results: Record<string, unknown>[] }[];
-  return result.results;
+  return queryRemote(`SELECT ${columns.join(", ")} FROM ${table}`);
 }
 
 mkdirSync("backups", { recursive: true });

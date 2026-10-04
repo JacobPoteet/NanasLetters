@@ -101,6 +101,7 @@ npm run db:migrate         # apply migrations to LOCAL db
 npm run db:migrate:remote  # apply migrations to PROD db
 npm run db:seed            # seed LOCAL db only — bootstrap/dev-fixture data, never real letters
 npm run db:export:remote   # dump PROD db → gitignored backups/ dir. Run before any prod DB work
+npm run archive            # read-only prod export → gitignored archives/ dir (see "Archive export" below); --no-pdf skips the PDFs
 ```
 
 Do not let `npm test` silently mean "the fast subset." One command, no flags, runs everything CI runs.
@@ -137,6 +138,16 @@ R2 is enabled account-wide and both buckets exist: `nanas-letters-photos` (attac
 GitHub Actions secrets are set: `CLOUDFLARE_API_TOKEN` (Workers + D1 + R2 edit scopes), `CLOUDFLARE_ACCOUNT_ID` (`9016037cfaa0836d9bbc85d754935cb5` — not a secret in the sense of needing hiding, but it lives as an Actions secret alongside the token for convenience).
 
 The site is live at the `*.workers.dev` URL; no custom domain has been pointed at it yet.
+
+## Archive export **[decided]**
+
+`npm run archive` (`scripts/archive.ts`) writes a dated, self-contained folder under the gitignored `archives/`: `index.html` (offline reader — on this day, browse, search; no server, opens from file://), `epub/` and `pdf/` (one per year), `letters/` (one .txt per letter), `all-letters.txt`, `data/letters.json`, `photos/`, `README.txt`, and `checksums.sha256` (`sha256sum -c` verifies it). It is a local, read-only pull from prod through wrangler — no Worker endpoint, so it costs no Worker CPU — and is separate from the daily D1→R2 backup (that is disaster recovery; this is the human-readable heirloom copy). Rules:
+
+- Only visible comments, never device ids or IP hashes; never the meditation body (title + link only, same as the site).
+- Every format is a pure fold in `shared/archive*.ts` with a test beside it. The reader's search/on-this-day logic is bundled from `shared/archiveSearch.ts` by esbuild, so it is tested too. The reader ships its data as a classic script, not fetched JSON, so it works from file://.
+- PDFs print through a locally installed Chrome/Edge via `puppeteer-core` (no bundled browser; `ARCHIVE_BROWSER` overrides the path) and are skipped with a warning if none exists. They are not PDF/A. In the Git Bash tool the browser launch fails (exits 0 immediately) while PowerShell works — run the archive from PowerShell.
+- Dev dependencies added for this, none shipped to the Worker: `puppeteer-core`, `fflate` (zip for EPUB), `esbuild` (pinned to the version `allowScripts` names).
+- Still open: re-running once the remaining letters are imported, and the photo path, which has never run against a real attachment (prod has none yet).
 
 ## The prod database is the only copy that matters
 
