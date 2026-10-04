@@ -1246,29 +1246,11 @@ button:focus-visible {
     transition: opacity 0.6s var(--ease-calm);
   }
 
-  /* Present only while the theme is changing (src/theme.ts). */
-  .theme-fading,
-  .theme-fading *,
-  .theme-fading *::before,
-  .theme-fading *::after {
-    transition:
-      background-color 1s var(--ease-calm),
-      color 1s var(--ease-calm),
-      border-color 1s var(--ease-calm),
-      fill 1s var(--ease-calm),
-      stroke 1s var(--ease-calm),
-      box-shadow 1s var(--ease-calm) !important;
-  }
-
-  .theme-fading .theme-switch__knob {
-    transition:
-      transform 0.6s var(--ease-calm),
-      background-color 1s var(--ease-calm),
-      color 1s var(--ease-calm) !important;
-  }
-
-  .theme-fading .theme-switch__icon {
-    transition: opacity 0.6s var(--ease-calm) !important;
+  /* Theme change: a cross-fade of the whole page (src/theme.ts). */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.9s;
+    animation-timing-function: var(--ease-calm);
   }
 
   .header__wordmark:hover {

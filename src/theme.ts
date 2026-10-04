@@ -41,19 +41,23 @@ export function useTheme(): { theme: Theme; toggle: () => void } {
 
   function toggle() {
     const next = oppositeTheme(theme);
-    // Colors drift over ~1s instead of cutting. The class exists only for the
-    // length of the change so it never taxes ordinary hovers or scrolling.
-    const root = document.documentElement;
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      root.classList.add("theme-fading");
-      window.setTimeout(() => root.classList.remove("theme-fading"), 1100);
-    }
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Storage blocked: the choice still applies for this page view.
     }
-    setTheme(next);
+    const change = () => {
+      applyTheme(next);
+      setTheme(next);
+    };
+    // A view transition cross-fades a snapshot of the page on the compositor,
+    // so it costs the same on Browse's thousands of cards as on a short page;
+    // transitioning every element's colors instead dropped Browse to ~2fps.
+    if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.startViewTransition(change);
+    } else {
+      change();
+    }
   }
 
   return { theme, toggle };
