@@ -77,6 +77,12 @@ button {
   justify-content: space-between;
   padding: 28px 64px;
   border-bottom: 1px solid var(--border);
+  /* Stays put while scrolling; Header.tsx publishes its height as --header-h
+     so Browse's sticky year headers and scroll offsets can sit beneath it. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
 }
 
 .header__wordmark {
@@ -510,7 +516,7 @@ button {
 
 .browse-year-header {
   position: sticky;
-  top: 0;
+  top: var(--header-h, 0px);
   z-index: 5;
   background: var(--bg);
   font-family: var(--font-serif);
@@ -525,7 +531,7 @@ button {
 /* The letter a reader just came back to from its full view (BrowsePage's
    history-state anchor): a warm wash that fades, so the eye finds its place. */
 .letter-card {
-  scroll-margin-top: 96px;
+  scroll-margin-top: calc(var(--header-h, 0px) + 96px);
 }
 
 @media (prefers-reduced-motion: no-preference) {

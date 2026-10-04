@@ -22,6 +22,12 @@ function label(tick: ScrubberTick | null): string {
   return tick ? `${MONTH_NAMES[tick.month - 1]} ${tick.year}` : "";
 }
 
+/** The year header's offset plus the stationary site header above it. */
+function scrollOffset(): number {
+  const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h"));
+  return SCROLL_OFFSET + (Number.isNaN(header) ? 0 : header);
+}
+
 /** Page-space top of an element, independent of the current scroll. */
 function pageTop(el: Element): number {
   return el.getBoundingClientRect().top + window.scrollY;
@@ -127,12 +133,12 @@ export function TimeScrubber({ listRef, contentKey }: { listRef: RefObject<HTMLE
   function scrollToFraction(fraction: number) {
     const list = listRef.current;
     if (!list) return;
-    window.scrollTo({ top: pageTop(list) + fraction * list.getBoundingClientRect().height - SCROLL_OFFSET });
+    window.scrollTo({ top: pageTop(list) + fraction * list.getBoundingClientRect().height - scrollOffset() });
   }
 
   function scrollToMonth(tick: ScrubberTick) {
     const el = listRef.current?.querySelector(`[data-month-key="${tick.key}"]`);
-    if (el) window.scrollTo({ top: pageTop(el) - SCROLL_OFFSET });
+    if (el) window.scrollTo({ top: pageTop(el) - scrollOffset() });
   }
 
   const focusRef = useRef(0);

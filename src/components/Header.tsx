@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import type { Role } from "../../shared/types";
 import { api } from "../api";
 import { openRandomLetter } from "../surprise";
@@ -8,6 +9,19 @@ export function Header({ role, onLoggedOut }: { role: Role | null; onLoggedOut: 
   const { navigate } = useRouter();
   const { theme, toggle: toggleTheme } = useTheme();
 
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  // The header wraps on narrow screens, so its height isn't a constant.
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const publish = () => document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   async function handleLogout() {
     await api.logout();
     onLoggedOut();
@@ -15,7 +29,7 @@ export function Header({ role, onLoggedOut }: { role: Role | null; onLoggedOut: 
   }
 
   return (
-    <div className="header">
+    <div className="header" ref={headerRef}>
       <Link to="/" className="header__wordmark">
         The Daily
       </Link>
