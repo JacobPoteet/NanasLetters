@@ -112,6 +112,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
         )}
       </div>
 
+      <div className="letter-ornament" aria-hidden="true">· · ·</div>
+
       {letter.photos.length > 0 && (
         <div style={{ marginTop: 32 }}>
           {letter.photos.map((photo) => (
@@ -168,8 +170,8 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
       )}
 
       <div className="letter-nav">
-        {prevId ? <Link to={`/letters/${prevId}${fromQuery}`}>← Previous letter</Link> : <span />}
-        {nextId ? <Link to={`/letters/${nextId}${fromQuery}`}>Next letter →</Link> : <span />}
+        {prevId ? <Link to={`/letters/${prevId}${fromQuery}`}>← The letter before</Link> : <span />}
+        {nextId ? <Link to={`/letters/${nextId}${fromQuery}`}>The next letter →</Link> : <span />}
       </div>
 
       {surprise && (

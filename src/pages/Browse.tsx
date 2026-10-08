@@ -163,7 +163,7 @@ export function BrowsePage() {
                   <div className="browse-month-label">{MONTH_NAMES[month.month - 1]}</div>
                   {month.letters.map((letter) => (
                     <div
-                      className={`letter-card reveal-on-scroll${letter.id === returnedId ? " letter-card--returned" : ""}`}
+                      className={`letter-card${letter.id === returnedId ? " letter-card--returned" : ""}`}
                       key={letter.id}
                       id={`letter-${letter.id}`}
                       onClickCapture={() => rememberAnchor(letter.id)}

@@ -27,6 +27,14 @@ function formatFullDate(date: string): string {
   return `${MONTH_NAMES[month - 1]} ${day}, ${year}`;
 }
 
+function greeting(now = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 5) return "Good evening";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 const COMMENT_FEED_BODY_LENGTH = 140;
 
 function truncateComment(body: string): string {
@@ -85,38 +93,59 @@ export function HomePage() {
 
   const showingNearby = result.exact.length === 0;
   const letters = showingNearby ? result.nearby : result.exact;
-  // Genuinely empty archive (an unseeded local dev DB, say) — a "0 letters
-  // kept" line would read as broken, not informative, so skip it entirely.
-  const showMasthead = stats !== null && stats.totalLetters > 0 && stats.firstLetterId !== null;
+  const [featured, ...others] = letters;
+  const showFootnote = stats !== null && stats.totalLetters > 0 && stats.firstLetterId !== null;
 
   return (
     <div className="content content--home">
-      {showMasthead && (
-        <p className="home-masthead">
-          {stats.totalLetters.toLocaleString()} letters, kept since {formatMonthYear(stats.firstDate)} —{" "}
-          <Link to={`/letters/${stats.firstLetterId}`}>including the very first one →</Link>
+      <header className="home-hero">
+        <h1 className="home-hero__greeting">{greeting()}</h1>
+        <p className="home-hero__lede">
+          {showingNearby
+            ? `Nana didn't write on ${formatMonthDay(result.monthDay)}, so here are the days around it.`
+            : `Here is what Nana wrote on ${formatMonthDay(result.monthDay)}, across the years.`}
         </p>
-      )}
+      </header>
 
       <div className="home-grid">
-      <div className={showMasthead ? "home-onthisday" : undefined}>
-        <div className="eyebrow">On this day</div>
-        <div className="big-date">{formatMonthDay(result.monthDay)}</div>
-        <div className="subtext">Letters written on this day, across the years.</div>
+      <div>
+        {featured && (
+          <figure className="home-feature">
+            <blockquote className="home-feature__quote">{featured.excerpt}</blockquote>
+            <figcaption className="home-feature__cite">
+              <span className="home-feature__year">{formatFullDate(featured.date)}</span>
+              <Link to={`/letters/${featured.id}`} className="letter-card__link">
+                Read the whole letter →
+              </Link>
+            </figcaption>
+          </figure>
+        )}
 
-        {showingNearby && (
+        {others.length > 0 && (
+          <div className="letter-list letter-list--more">
+            {others.map((letter) => (
+              <LetterCard key={letter.id} letter={letter} />
+            ))}
+          </div>
+        )}
+
+        {!featured && (
           <div className="empty-state empty-state--nearby">
-            Nana didn't write on this exact day, so here are the days around it.{" "}
             <button type="button" className="surprise-more__button" onClick={() => openRandomLetter(navigate)}>
-              Or let a letter find you.
+              Let a letter find you.
             </button>
           </div>
         )}
-        <div className="letter-list">
-          {letters.map((letter) => (
-            <LetterCard key={letter.id} letter={letter} />
-          ))}
-        </div>
+
+        {showFootnote && (
+          <p className="home-footnote">
+            {stats.totalLetters.toLocaleString()} letters, kept since {formatMonthYear(stats.firstDate)}.{" "}
+            <Link to={`/letters/${stats.firstLetterId}`}>Read the very first one →</Link>{" "}
+            <button type="button" className="home-footnote__surprise" onClick={() => openRandomLetter(navigate)}>
+              Or let one find you.
+            </button>
+          </p>
+        )}
       </div>
 
       {recentComments.length > 0 && (

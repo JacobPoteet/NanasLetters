@@ -203,26 +203,98 @@ button {
   line-height: 1.5;
 }
 
-/* Homepage welcome line above "On this day" — one sentence, not a stat-tile
-   row: a boxed "big number + label" masthead was tried and cut (it read as
-   a dashboard bolted onto a family archive, and told nobody anything they
-   cared about). The number and date do their work inline in prose instead,
-   and the one link goes somewhere real (the actual first letter) rather
-   than sitting there as decoration. */
-.home-masthead {
+/* The top of Home: a time-of-day greeting and one line saying what follows,
+   then a single letter set at reading size like a card on a mantel. The
+   archive count is a footnote, not a hero metric — a boxed stat row was tried
+   and cut, and a count-first welcome was cut after it. */
+.home-hero {
+  margin: 0 0 8px;
+  max-width: 34rem;
+}
+
+.home-hero__greeting {
   font-family: var(--font-serif);
-  font-size: 19px;
-  line-height: 1.6;
+  font-weight: 500;
+  font-size: 56px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 8px 0 14px;
   color: var(--ink);
-  max-width: 58ch;
-  margin: 0 0 40px;
-  padding-bottom: 40px;
+}
+
+.home-hero__lede {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.home-feature {
+  margin: 44px 0 0;
+  padding: 0 0 40px;
   border-bottom: 1px solid var(--border);
 }
 
-.home-onthisday {
-  margin-top: 8px;
+.home-feature__quote {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 27px;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 34em;
+  text-wrap: pretty;
 }
+
+.home-feature__quote::before {
+  content: "\201C";
+  color: var(--accent);
+}
+
+.home-feature__quote::after {
+  content: "\201D";
+  color: var(--accent);
+}
+
+.home-feature__cite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+  margin-top: 20px;
+}
+
+.home-feature__year {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.letter-list--more {
+  margin-top: 0;
+  border-top: none;
+}
+
+.home-footnote {
+  margin: 36px 0 0;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink-muted);
+}
+
+.home-footnote__surprise {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  line-height: inherit;
+  color: var(--accent-link);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 
 /* Home pairs On this day with the comment feed. Wide: two columns, so the
    family's comments stay beside the letters however many years there are. Narrow: one
@@ -250,6 +322,8 @@ button {
     top: 24px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
     margin-top: 8px;
     padding: 0 0 0 40px;
     border-top: none;
@@ -404,6 +478,22 @@ button {
   font-size: 16px;
   color: var(--ink-muted);
   margin-top: 6px;
+}
+
+.letter-ornament {
+  margin: 48px 0 0;
+  text-align: center;
+  font-family: var(--font-serif);
+  color: var(--ink-faint);
+  letter-spacing: 0.6em;
+  user-select: none;
+}
+
+.letter-nav a {
+  display: inline-block;
+  padding: 12px 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
 }
 
 .letter-nav {
@@ -1019,8 +1109,21 @@ button {
     min-width: 0;
   }
 
-  .home-masthead {
-    font-size: 17px;
+  .home-hero__greeting {
+    font-size: 40px;
+  }
+
+  .home-hero__lede {
+    font-size: 18px;
+  }
+
+  .home-feature {
+    margin-top: 32px;
+    padding-bottom: 32px;
+  }
+
+  .home-feature__quote {
+    font-size: 21px;
   }
 
   .browse-year-header {
