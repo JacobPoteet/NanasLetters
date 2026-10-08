@@ -66,8 +66,16 @@ export function LetterPage({ id, role, search }: { id: number; role: Role; searc
     highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [data, highlight]);
 
-  if (error) return <div className="content error-text">{error}</div>;
-  if (!data) return <div className="content">Loading…</div>;
+  if (error)
+    return (
+      <div className="content content--narrow">
+        <p className="empty-state empty-state--nearby">
+          We couldn't find that letter.{" "}
+          <Link to="/">Back to today</Link>
+        </p>
+      </div>
+    );
+  if (!data) return <div className="content content--narrow loading-state">Opening the letter…</div>;
 
   const { letter, prevId, nextId } = data;
   const back = backTarget(search, id);

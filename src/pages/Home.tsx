@@ -3,7 +3,8 @@ import type { ArchiveStats, LetterSummary, OnThisDayResult, RecentComment } from
 import { pageTitle } from "../../shared/pageTitle";
 import { api } from "../api";
 import { trackVisit } from "../analytics";
-import { Link } from "../router";
+import { Link, useRouter } from "../router";
+import { openRandomLetter } from "../surprise";
 import { useDocumentTitle } from "../useDocumentTitle";
 
 const MONTH_NAMES = [
@@ -61,6 +62,7 @@ function LetterCard({ letter }: { letter: LetterSummary }) {
 }
 
 export function HomePage() {
+  const { navigate } = useRouter();
   const [result, setResult] = useState<OnThisDayResult | null>(null);
   const [stats, setStats] = useState<ArchiveStats | null>(null);
   const [recentComments, setRecentComments] = useState<RecentComment[]>([]);
@@ -79,7 +81,7 @@ export function HomePage() {
   }, []);
 
   if (error) return <div className="content error-text">{error}</div>;
-  if (!result) return <div className="content">Loading…</div>;
+  if (!result) return <div className="content loading-state">Gathering the morning's letters…</div>;
 
   const showingNearby = result.exact.length === 0;
   const letters = showingNearby ? result.nearby : result.exact;
@@ -103,7 +105,12 @@ export function HomePage() {
         <div className="subtext">Letters written on this day, across the years.</div>
 
         {showingNearby && (
-          <div className="empty-state">Nothing from exactly this day yet — here are a few days either side.</div>
+          <div className="empty-state empty-state--nearby">
+            Nana didn't write on this exact day, so here are the days around it.{" "}
+            <button type="button" className="surprise-more__button" onClick={() => openRandomLetter(navigate)}>
+              Or let a letter find you.
+            </button>
+          </div>
         )}
         <div className="letter-list">
           {letters.map((letter) => (

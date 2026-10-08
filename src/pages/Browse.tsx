@@ -148,7 +148,7 @@ export function BrowsePage() {
       </div>
 
       {!letters ? (
-        <div className="empty-state">Loading…</div>
+        <div className="empty-state loading-state">Gathering the letters…</div>
       ) : letters.length === 0 ? (
         <div className="empty-state">Nothing here yet.</div>
       ) : (

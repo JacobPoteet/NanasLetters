@@ -90,7 +90,7 @@ export function Comments({ letterId, scrollToCommentId }: { letterId: number; sc
       </div>
 
       {comments === null ? null : comments.length === 0 ? (
-        <p className="empty-state">Be the first to say something about this one.</p>
+        <p className="empty-state">Write her a note, or tell the family what this one brought back.</p>
       ) : (
         <div className="comment-list">
           {comments.map((comment) => (
