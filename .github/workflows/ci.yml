@@ -1,16 +1,14 @@
 name: CI
 
-# Runs npm test -> npm run check -> npm run lint on every push/PR to main.
+# Runs npm test -> npm run check -> npm run lint on every PR to main, then
+# CI gate, the required status check.
 #
-# paths-ignore skips a run when a push/PR touches ONLY inert files (prose --
-# there's no code to test in a README edit). A commit mixing a doc with any
-# other file still runs the full gate -- GitHub skips only when EVERY changed
-# path matches. Must stay identical to codeql.yml's paths-ignore (see
-# CLAUDE.md's CI/CD section -- GitHub Actions has no YAML anchors).
-#
-# NOTE: if this ever becomes a REQUIRED status check, paths-ignore will leave
-# doc-only PRs stuck on "Expected -- waiting for status". The fix then is an
-# always-running gate job, not a special case here.
+# A workflow-level paths-ignore on pull_request would leave doc-only PRs stuck
+# on "Expected, waiting for status" once CI is required, so PRs always run and
+# the changes job skips the test job when every changed path is a **.md file.
+# A commit mixing a doc with any other file still runs the full gate. That
+# skip list must match codeql.yml's paths-ignore (GitHub Actions has no YAML
+# anchors). Pushes to main keep paths-ignore: nothing requires a check there.
 on:
   push:
     branches:
@@ -20,15 +18,37 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "**.md"
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # code=true when any changed file is not a **.md file, and always on a push.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -z "$BASE" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git diff --name-only "$BASE" HEAD > changed.txt
+          cat changed.txt
+          if grep -qvE '\.md$' changed.txt; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,13 +62,29 @@ jobs:
 
       # worker-configuration.d.ts (Cloudflare runtime types + Env) is
       # gitignored and generated, and Env's secret members are derived from
-      # .dev.vars, also gitignored -- so CI needs a placeholder before
+      # .dev.vars, also gitignored, so CI needs a placeholder before
       # typecheck/build. Derived from the committed .dev.vars.example rather
       # than spelled out here, so a new secret only has to be added in one
-      # place (see CLAUDE.md's CI/CD section).
+      # place (see CLAUDE.md's Secrets section).
       - run: grep -E '^[A-Z_]+=' .dev.vars.example | sed -E 's/=.*/=placeholder/' > .dev.vars
       - run: npm run cf-typegen
 
       - run: npm test
       - run: npm run check
       - run: npm run lint
+
+  # The one required check. A skipped test job (doc-only PR) passes; a failed
+  # or cancelled one fails the gate.
+  gate:
+    name: CI gate
+    if: always()
+    needs: [changes, test]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ needs.changes.result }} ${{ needs.test.result }}
+        run: |
+          echo "changes test: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "::error::a CI job ended $r"; exit 1 ;; esac
+          done
